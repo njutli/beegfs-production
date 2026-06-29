@@ -1,0 +1,14 @@
+# local results
+results/
+# local logs
+log/
+# credentials
+.credentials/
+# downloads
+downloads/
+# os artifacts
+*.swp
+*.swo
+*~
+.DS_Store
+__pycache__/
