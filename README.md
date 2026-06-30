@@ -1,6 +1,19 @@
 # BeeGFS Storage Cluster — Production (4 Machines)
 
-## 架构
+## 什么是 BeeGFS？
+
+[BeeGFS](https://www.beegfs.io/) 是一个开源的并行文件系统，专为高性能计算（HPC）场景设计。被全球 TOP500 超算广泛采用。
+
+### 主要特性
+
+- **并行架构**: 元数据与存储分离，支持横向扩展
+- **高性能**: 支持 stripe 条带化，高并发 I/O，InfiniBand/100GbE 网络
+- **简单部署**: 无需复杂配置，类 NFS 的使用体验
+- **客户端支持**: Linux FUSE 客户端，无需内核模块
+
+### 本项目架构
+
+采用 3 台存储节点 + 1 台客户端的设计：
 
 ```
                     BeeGFS Client (157)
