@@ -2,59 +2,66 @@
 # ============================================================
 # BeeGFS Production Deployment Configuration (4 Machines)
 #
-# 架构说明:
-#   - 157: 只做 Client (mount point)，不部署任何服务
-#   - 150: mgmtd + meta + 2 storage targets
-#   - 151: meta + 2 storage targets  
-#   - 152: meta + 2 storage targets
+# 架构说明 (官方最佳实践 + 镜像):
+#   157 (client + meta):     nvme1n1(894G ext4) → metadata
+#   150 (mgmtd + meta + storage):  nvme1n1(894G ext4) → metadata
+#                                  nvme2n1(7T XFS) + nvme3n1(7T XFS) → 2 storage
+#   151 (meta + storage):    同 150
+#   152 (meta + storage):    同 150
 #
-# 磁盘规划:
-#   - 157: 不动任何配置，只做客户端
-#   - 150-152: 各 2×7TB 独立NVMe → 6 storage targets
+# 镜像配置 (Buddy Groups):
+#   Metadata: 2 groups (4 meta servers, 偶数才能镜像)
+#     Group 1: 150-meta + 151-meta
+#     Group 2: 152-meta + 157-meta
+#   Storage: 3 groups (6 targets, 跨节点配对)
+#     Group 1: 150-disk1 + 151-disk1
+#     Group 2: 150-disk2 + 152-disk1
+#     Group 3: 151-disk2 + 152-disk2
 #
-# Edit this file with your actual server IPs before running.
+# 官方文档: https://doc.beegfs.io/latest/
 # ============================================================
 
-# --- Client Server (只做客户端，不部署服务) ---
-# 157 不部署任何 BeeGFS 服务，只作为客户端挂载点
+# --- Client + Metadata Server (157) ---
+# 157 运行 client + metadata 服务 (用空闲的 nvme1n1)
+# 不运行 storage 服务，不影响现有业务
 CLIENT_SERVER="10.20.1.157"
 CLIENT_EXT="203.156.3.194"
 CLIENT_PORT="19891"
 
-# --- Slave Servers (部署 mgmtd + meta + storage) ---
-# 150: mgmtd + meta + 2 storage targets
-# 151: meta + 2 storage targets
-# 152: meta + 2 storage targets
+# --- Slave Servers (mgmtd + meta + storage) ---
 SLAVE_SERVERS=(
-  "10.20.1.150"  # mgmtd + meta + storage
-  "10.20.1.151"  # meta + storage
-  "10.20.1.152"  # meta + storage
+  "10.20.1.150"  # mgmtd + meta + 2 storage
+  "10.20.1.151"  # meta + 2 storage
+  "10.20.1.152"  # meta + 2 storage
 )
 
-# All servers (client + slaves)
+# All servers with metadata service (4 nodes, 偶数 for mirroring)
+META_SERVERS=( "${CLIENT_SERVER}" "${SLAVE_SERVERS[@]}" )
+
+# All servers
 ALL_SERVERS=( "${CLIENT_SERVER}" "${SLAVE_SERVERS[@]}" )
 
+# --- BeeGFS Version ---
+# 使用 BeeGFS 8.x (官方最新)
+BEEGFS_MAJOR_VERSION="8"
+
 # --- BeeGFS Service Hosts ---
-# Management service runs on slave1 (10.20.1.150)
 BEEGFS_MGMTD_HOST="10.20.1.150"
 BEEGFS_MGMTD_PORT="8008"
-
-# Metadata service runs on all slaves
 BEEGFS_META_PORT="8005"
 BEEGFS_STORAGE_PORT="8003"
 BEEGFS_CLIENT_PORT="8004"
 
 # --- Storage Paths (Slaves only) ---
-# Slaves: two storage paths (独立NVMe)
-BEEGFS_DATA_ROOT="/data/beegfs"
-
-# Storage directories on slaves
+# Storage: XFS on independent NVMe (官方推荐 XFS)
 BEEGFS_STORAGE_DIR_SLAVE_1="/data/disk1"
 BEEGFS_STORAGE_DIR_SLAVE_2="/data/disk2"
 
-# Metadata and mgmtd paths (on slaves)
-BEEGFS_MGMTD_DIR="${BEEGFS_DATA_ROOT}/mgmtd"
-BEEGFS_META_DIR="${BEEGFS_DATA_ROOT}/meta"
+# Metadata: ext4 on dedicated nvme1n1 (官方推荐 ext4 for metadata)
+BEEGFS_META_DIR="/mnt/beegfs-meta/beegfs_meta"
+
+# Management: SQLite database (8.x uses SQLite, not directory)
+BEEGFS_MGMTD_DB="/var/lib/beegfs/mgmtd.sqlite"
 
 # --- Client Mount ---
 BEEGFS_MOUNT_POINT="/mnt/beegfs"
@@ -73,17 +80,38 @@ SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLeve
 BEEGFS_CONN_INTERFACES=""
 BEEGFS_CONN_INTERFACES_FILE="/etc/beegfs/conninf.conf"
 
-# --- Tuning ---
-# Stripe pattern: RAID0 (default), random, RAID10
-BEEGFS_STRIPE_PATTERN="raid0"
-BEEGFS_STRIPE_SIZE="512K"
-# Stripe count: 6 storage targets on slaves
-BEEGFS_STRIPE_COUNT="6"
+# --- TLS & Authentication (8.x required, can disable for testing) ---
+BEEGFS_TLS_DISABLE="true"
+BEEGFS_AUTH_DISABLE="true"
 
-# --- Repo ---
-BEEGFS_REPO_URL="https://www.beegfs.io/release/beegfs_7.4/dists/beegfs-deb11.list"
-BEEGFS_REPO_KEY="https://www.beegfs.io/release/beegfs_7.4/gpg/DEB-GPG-KEY-beegfs_7.4.asc"
+# --- Tuning (per official docs) ---
+# Stripe pattern: mirrored (启用 buddy group 镜像)
+BEEGFS_STRIPE_PATTERN="mirrored"
+BEEGFS_STRIPE_SIZE="1MiB"
+# Stripe count = number of buddy groups = 3 (storage)
+BEEGFS_STRIPE_COUNT="3"
 
-# --- Client-only mode ---
-# 157 只做客户端，不部署任何服务
-CLIENT_ONLY="yes"
+# --- XFS Mount Options (per official storage tuning docs) ---
+BEEGFS_XFS_MOUNT_OPTS="noatime,nodiratime,logbufs=8,logbsize=256k,largeio,inode64,swalloc,allocsize=131072k"
+
+# --- Repo (BeeGFS 8.x) ---
+BEEGFS_REPO_URL="https://www.beegfs.io/release/beegfs_${BEEGFS_MAJOR_VERSION}/dists/beegfs-deb11.list"
+BEEGFS_REPO_KEY="https://www.beegfs.io/release/beegfs_${BEEGFS_MAJOR_VERSION}/gpg/DEB-GPG-KEY-beegfs_${BEEGFS_MAJOR_VERSION}.asc"
+
+# --- Node IDs (for setup commands) ---
+# Metadata node IDs
+META_NODE_ID_157="1"
+META_NODE_ID_150="2"
+META_NODE_ID_151="3"
+META_NODE_ID_152="4"
+
+# Storage service/target IDs
+STORAGE_SVC_ID_150="101"
+STORAGE_TARGET_ID_150_1="1011"
+STORAGE_TARGET_ID_150_2="1012"
+STORAGE_SVC_ID_151="102"
+STORAGE_TARGET_ID_151_1="1021"
+STORAGE_TARGET_ID_151_2="1022"
+STORAGE_SVC_ID_152="103"
+STORAGE_TARGET_ID_152_1="1031"
+STORAGE_TARGET_ID_152_2="1032"

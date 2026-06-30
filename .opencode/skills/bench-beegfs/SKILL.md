@@ -87,8 +87,10 @@ source tests/lib/beegfs-health-check.sh
 
 ## 注意事项
 
-1. **Storage Targets**: 7 个 (master 1个 RAID0 + slaves 6个 独立NVMe)
-2. layout 阶段会产生 128G 数据，确保各 storage target 有足够空间
-3. 随机测试 128 jobs × 128 iodepth = 高并发，可能触发 fio 残留问题（参考 TESTING-GUIDE.md）
-4. 测试前确认所有 BeeGFS 服务正常运行 (`beegfs-ctl --listtargets`)
-5. Master 使用 RAID0，单 target；Slaves 各 2 个独立 target，并行度更高
+1. **Storage Targets**: 6 个 (slaves 各 2 个独立NVMe)，3 个 buddy groups
+2. **Metadata**: 4 个 meta 节点 (含 client 157)，2 个 buddy groups
+3. **镜像**: metadata + storage 均启用镜像，任一节点宕机数据可访问
+4. layout 阶段会产生 128G 数据，确保各 storage target 有足够空间
+5. 随机测试 128 jobs × 128 iodepth = 高并发，可能触发 fio 残留问题
+6. 测试前确认所有 BeeGFS 服务正常运行
+7. **调优差异**: THP=always (非never), IO调度器=deadline (非none), per 官方文档

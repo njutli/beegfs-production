@@ -1,6 +1,6 @@
 ---
 name: beegfs-node-conventions
-description: Use for ALL tasks involving file operations, cluster operations, or testing on the BeeGFS production environment. Defines the default remote host (master 10.20.1.157 via jump 203.156.3.194:19891), SSH credentials, and base working directory. Use ONLY when operating on the BeeGFS storage cluster environment.
+description: Use for ALL tasks involving file operations, cluster operations, or testing on the BeeGFS production environment. Defines the default remote host (client 10.20.1.157 via jump 203.156.3.194:19891), SSH credentials, and base working directory. Use ONLY when operating on the BeeGFS storage cluster environment.
 ---
 
 # BeeGFS 生产环境操作规范
@@ -19,8 +19,6 @@ description: Use for ALL tasks involving file operations, cluster operations, or
 | 密码       | Sunrise@801                          |
 | 基础目录   | /home/sunrise/beegfs-production      |
 
-**注意**: 157 只做客户端，不部署任何服务。
-
 ### 从服务器
 
 | 角色   | 内网 IP       | 用户名   | 密码          |
@@ -31,61 +29,41 @@ description: Use for ALL tasks involving file operations, cluster operations, or
 
 ### 架构说明
 
-- **Client (157)**: 只做 FUSE 客户端挂载点，下发 IO
+- **Client (157)**: client + metadata 服务 (用 nvme1n1, ext4)
 - **Slave1 (150)**: mgmtd + meta + 2 storage targets
 - **Slave2-3 (151-152)**: meta + 2 storage targets each
-- **总计**: 6 storage targets
+- **镜像**: metadata 2 buddy groups + storage 3 buddy groups
+- **总计**: 4 metadata nodes + 6 storage targets
+
+## 磁盘环境
+
+| 机器 | 设备 | 容量 | 文件系统 | 用途 |
+|------|------|------|---------|------|
+| 157 | nvme1n1 | 894GB | ext4 | metadata (/mnt/beegfs-meta) |
+| 150-152 | nvme1n1 | 894GB | ext4 | metadata (/mnt/beegfs-meta) |
+| 150-152 | nvme2n1 | 7TB | XFS | storage (/data/disk1) |
+| 150-152 | nvme3n1 | 7TB | XFS | storage (/data/disk2) |
 
 ## SSH 连接方式
 
-### 从 WSL 连接主服务器
+### 从 WSL 连接客户端
 
 ```bash
 sshpass -p 'Sunrise@801' ssh -o StrictHostKeyChecking=no -p 19891 sunrise@203.156.3.194 "<command>"
 ```
 
-文件传输：
-
-```bash
-sshpass -p 'Sunrise@801' scp -o StrictHostKeyChecking=no -P 19891 <local_file> sunrise@203.156.3.194:/home/sunrise/beegfs-production/<path>
-```
-
-### 从主服务器连接从服务器
+### 从客户端连接从服务器
 
 ```bash
 sshpass -p 'Sunrise@801' ssh -o StrictHostKeyChecking=no sunrise@10.20.1.150 "<command>"
 ```
 
-### 两级跳转（WSL → master → slave）
+### 两级跳转（WSL → client → slave）
 
 ```bash
 sshpass -p 'Sunrise@801' ssh -o StrictHostKeyChecking=no -p 19891 sunrise@203.156.3.194 \
   "sshpass -p 'Sunrise@801' ssh -o StrictHostKeyChecking=no sunrise@10.20.1.150 '<command>'"
 ```
-
-## 磁盘环境
-
-### Master (10.20.1.157)
-
-| 设备         | 容量    | 用途                                   |
-| ------------ | ------- | -------------------------------------- |
-| `/dev/md0`   | 14TB    | 2×NVMe RAID0 → /data/beegfs/storage    |
-| `/dev/nvme1n1`| 894GB  | 空闲 (可选做metadata target)          |
-| `/dev/nvme0n1`| 894GB  | 系统盘                                 |
-
-### Slaves (10.20.1.150-152)
-
-| 设备         | 容量    | 用途                                   |
-| ------------ | ------- | -------------------------------------- |
-| `/dev/nvme2n1`| 7TB    | /data/disk1 (storage target 1)         |
-| `/dev/nvme3n1`| 7TB    | /data/disk2 (storage target 2)         |
-| `/dev/nvme1n1`| 894GB  | 空闲 (可选做metadata target)          |
-| `/dev/nvme0n1`| 894GB  | 系统盘                                 |
-
-**Storage Targets 总数**: 1 (master) + 6 (slaves) = 7
-| /dev/md0     | 14TB    | 2×NVMe RAID0，已挂载 /data，BeeGFS 数据 |
-| /dev/nvme1n1 | 894GB   | 空闲裸盘，可用于 metadata target        |
-| /dev/nvme0n1 | 894GB   | 系统盘（/ 和 /boot/efi）                |
 
 ## 网络
 
@@ -96,52 +74,44 @@ sshpass -p 'Sunrise@801' ssh -o StrictHostKeyChecking=no -p 19891 sunrise@203.15
 
 ## 文件操作规范
 
-1. **所有文件路径** 默认相对于 `/home/sunrise/beegfs-production/`（主服务器上的该目录）。
-2. 读写文件、创建目录、编辑脚本等操作都在主服务器上执行。
-3. 除非用户明确指定本地路径或其他远程主机，否则一律使用主服务器。
-4. 集群相关的测试也基于主服务器执行（主服务器也是客户端）。
+1. **所有文件路径** 默认相对于 `/home/sunrise/beegfs-production/`（客户端上的该目录）。
+2. 读写文件、创建目录、编辑脚本等操作都在客户端上执行。
+3. 除非用户明确指定本地路径或其他远程主机，否则一律使用客户端。
 
-## 文档编号规范
+## 调优说明 (per 官方文档)
 
-当用户提起**文档编号**（如"文档01"、"文档10"等）时，默认指向 `/home/sunrise/beegfs-production/doc/perf-analysis/` 目录下对应的 `.md` 文件。
+| 项目 | BeeGFS 官方建议 | 注意 |
+|------|----------------|------|
+| THP | **always** (启用) | 与 Ceph 项目相反 |
+| IO 调度器 | deadline | 非 none |
+| XFS 挂载 | noatime,logbufs=8,logbsize=256k,largeio,inode64,swalloc,allocsize=131072k | 官方推荐 |
+| dirty_ratio | 5/20 | 官方默认 |
 
-例如：
-- "文档01" → `doc/perf-analysis/01-measured-data.md`
-
-## 集群测试规范
-
-- 测试脚本位于 `/home/sunrise/beegfs-production/tests/` 目录。
-- 测试结果存放在 `/home/sunrise/beegfs-production/results/` 目录。
-- 部署脚本位于根目录（如 `deploy-beegfs.sh`）。
-- 配置文件位于 `config.sh`。
-- 日志文件位于 `/home/sunrise/beegfs-production/log/` 目录。
-
-## 目录结构概览
+## 目录结构
 
 ```
 /home/sunrise/beegfs-production/
-├── README.md                  # 项目说明
-├── config.sh                  # 环境配置
-├── setup-ssh-keys.sh          # SSH 密钥配置
-├── prepare-servers.sh         # 单机初始化
-├── prepare-all-servers.sh     # 批量初始化
-├── deploy-beegfs.sh           # BeeGFS 部署
-├── tune-servers.sh            # 系统调优
-├── tests/                     # 测试脚本
-│   ├── lib/                   # 测试库
-│   ├── bench-basic.sh         # 基本读写测试
-│   └── bench-full.sh          # 全量性能测试
-├── doc/                       # 文档
-│   └── perf-analysis/         # 性能分析
-├── results/                   # 测试结果
-├── skills/                    # 规范文档
-└── log/                       # 日志
+├── README.md
+├── config.sh
+├── setup-ssh-keys.sh
+├── prepare-servers.sh
+├── prepare-all-servers.sh
+├── deploy-beegfs.sh
+├── tune-servers.sh
+├── tests/
+│   ├── lib/
+│   ├── bench-basic.sh
+│   └── bench-full.sh
+├── doc/
+│   └── perf-analysis/
+├── results/
+├── skills/
+└── log/
 ```
 
 ## 执行命令的注意事项
 
-1. 使用 `sshpass` 时始终添加 `-o StrictHostKeyChecking=no` 避免主机密钥确认提示。
+1. 使用 `sshpass` 时始终添加 `-o StrictHostKeyChecking=no`。
 2. 远程命令中的路径应使用绝对路径。
-3. 需要交互式操作的命令应避免直接通过 SSH 执行，改用非交互式替代方案。
-4. 长时间运行的命令应加 `timeout` 或使用 `nohup` 后台运行。
-5. sudo 需要密码：`echo 'Sunrise@801' | sudo -S <command>`（prepare-servers.sh 配置 NOPASSWD 后则不需要）。
+3. 长时间运行的命令应加 `timeout` 或使用 `nohup` 后台运行。
+4. sudo 需要密码：`echo 'Sunrise@801' | sudo -S <command>`（prepare-servers.sh 配置 NOPASSWD 后则不需要）。

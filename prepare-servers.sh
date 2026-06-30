@@ -9,7 +9,11 @@ set -euo pipefail
 #   - NOPASSWD sudo
 #   - Essential packages
 #   - Firewall rules
-#   - Create BeeGFS directories on /data
+#   - Create BeeGFS directories
+#
+# Disk layout (already done by admin):
+#   Slaves: nvme1n1(ext4→/mnt/beegfs-meta) + nvme2n1(XFS→/data/disk1) + nvme3n1(XFS→/data/disk2)
+#   Client: nvme1n1(ext4→/mnt/beegfs-meta)
 #
 # Usage: sudo bash prepare-servers.sh
 # ============================================================
@@ -19,18 +23,21 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+SUDO_USER="${SUDO_USER:-sunrise}"
+BEEGFS_META_MOUNT="/mnt/beegfs-meta"
+BEEGFS_META_DIR="${BEEGFS_META_MOUNT}/beegfs_meta"
+
 echo "========================================"
 echo "BeeGFS Server Preparation"
 echo "Host: $(hostname)"
 echo "========================================"
 
 # ============================================================
-# 1. Time synchronisation (critical for distributed systems)
+# 1. Time synchronisation
 # ============================================================
 
 echo ""
 echo ">>> Time synchronisation..."
-
 apt-get update -qq || echo "  (apt update had errors, continuing)"
 
 if systemctl is-active systemd-timesyncd &>/dev/null; then
@@ -46,12 +53,11 @@ fi
 echo "  Time sync enabled."
 
 # ============================================================
-# 2. Grant NOPASSWD sudo to sunrise
+# 2. Grant NOPASSWD sudo
 # ============================================================
 
 echo ""
-echo ">>> Granting passwordless sudo to ${SUDO_USER:-sunrise}..."
-SUDO_USER="${SUDO_USER:-sunrise}"
+echo ">>> Granting passwordless sudo to ${SUDO_USER}..."
 if ! grep -q "^${SUDO_USER} ALL=(ALL) NOPASSWD:ALL" /etc/sudoers.d/${SUDO_USER} 2>/dev/null; then
     echo "${SUDO_USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${SUDO_USER}
     chmod 440 /etc/sudoers.d/${SUDO_USER}
@@ -64,21 +70,18 @@ echo "  Done."
 
 echo ""
 echo ">>> Installing essential packages..."
-
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
     curl wget tar gzip build-essential \
     htop iotop iftop sysstat fio \
     >/dev/null 2>&1 || echo "  (some packages unavailable, continuing)"
-
 echo "  Packages installed."
 
 # ============================================================
-# 4. Firewall — open BeeGFS ports
+# 4. Firewall
 # ============================================================
 
 echo ""
 echo ">>> Configuring firewall..."
-
 if command -v ufw &>/dev/null && ufw status | grep -q 'Status: active'; then
     echo "  Using UFW..."
     ufw allow 8008/tcp comment 'BeeGFS mgmtd'
@@ -93,7 +96,7 @@ elif command -v firewall-cmd &>/dev/null; then
     firewall-cmd --permanent --add-port=8004/tcp 2>/dev/null || true
     firewall-cmd --reload 2>/dev/null || true
 else
-    echo "  No firewall detected. Ports needed: TCP 8003, 8004, 8005, 8008"
+    echo "  No firewall detected. Ports: TCP 8003, 8004, 8005, 8008"
 fi
 
 # ============================================================
@@ -103,48 +106,24 @@ fi
 echo ""
 echo ">>> Creating BeeGFS directories..."
 
-BEEGFS_DATA_ROOT="/data/beegfs"
-
-# Detect disk configuration
-if mountpoint -q /data 2>/dev/null; then
-    # Master: RAID0 mounted at /data
-    echo "  Detected: /data is mounted (RAID0 on master)"
-    mkdir -p "${BEEGFS_DATA_ROOT}/mgmtd"
-    mkdir -p "${BEEGFS_DATA_ROOT}/meta"
-    mkdir -p "${BEEGFS_DATA_ROOT}/storage"
-    chown -R "${SUDO_USER}:${SUDO_USER}" "${BEEGFS_DATA_ROOT}" 2>/dev/null || true
-    echo "  Created: ${BEEGFS_DATA_ROOT}/{mgmtd,meta,storage}"
-elif [ -d /data/disk1 ] && [ -d /data/disk2 ]; then
-    # Slaves: independent NVMe at /data/disk1 and /data/disk2
-    echo "  Detected: /data/disk1 and /data/disk2 (独立NVMe on slaves)"
-    mkdir -p "${BEEGFS_DATA_ROOT}/mgmtd"
-    mkdir -p "${BEEGFS_DATA_ROOT}/meta"
-    mkdir -p /data/disk1
-    mkdir -p /data/disk2
-    chown -R "${SUDO_USER}:${SUDO_USER}" /data/disk1 /data/disk2 2>/dev/null || true
-    chown -R "${SUDO_USER}:${SUDO_USER}" "${BEEGFS_DATA_ROOT}" 2>/dev/null || true
-    echo "  Created: ${BEEGFS_DATA_ROOT}/{mgmtd,meta} + /data/disk1 + /data/disk2"
+# Metadata directory on nvme1n1 (ext4)
+if mountpoint -q "${BEEGFS_META_MOUNT}" 2>/dev/null; then
+    echo "  Metadata mount: ${BEEGFS_META_MOUNT} ($(df -h ${BEEGFS_META_MOUNT} | tail -1 | awk '{print $1}'))"
+    mkdir -p "${BEEGFS_META_DIR}"
+    chown -R beegfs:beegfs "${BEEGFS_META_MOUNT}" 2>/dev/null || true
+    echo "  Created: ${BEEGFS_META_DIR}"
 else
-    # Fallback: create standard directories
-    echo "  WARNING: Unknown disk configuration, using default layout"
-    mkdir -p "${BEEGFS_DATA_ROOT}/mgmtd"
-    mkdir -p "${BEEGFS_DATA_ROOT}/meta"
-    mkdir -p "${BEEGFS_DATA_ROOT}/storage"
-    chown -R "${SUDO_USER}:${SUDO_USER}" "${BEEGFS_DATA_ROOT}" 2>/dev/null || true
+    echo "  WARNING: ${BEEGFS_META_MOUNT} not mounted. Format nvme1n1 first:"
+    echo "    mkfs.ext4 -F /dev/nvme1n1 && mount /dev/nvme1n1 ${BEEGFS_META_MOUNT}"
 fi
 
-echo ""
-echo ">>> Directories created:"
-ls -ld /data/*/ 2>/dev/null || true
-
-# ============================================================
-# 6. Set hostname alias for BeeGFS (optional)
-# ============================================================
-
-echo ""
-echo ">>> Hostname: $(hostname)"
-echo "  BeeGFS uses hostnames for node identification."
-echo "  Ensure all servers can resolve each other by hostname."
+# Storage directories (slaves only)
+for disk in /data/disk1 /data/disk2; do
+    if mountpoint -q "${disk}" 2>/dev/null; then
+        echo "  Storage mount: ${disk} ($(df -h ${disk} | tail -1 | awk '{print $1}'))"
+        chown -R beegfs:beegfs "${disk}" 2>/dev/null || true
+    fi
+done
 
 echo ""
 echo "========================================"

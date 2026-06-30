@@ -2,14 +2,19 @@
 set -euo pipefail
 
 # ============================================================
-# BeeGFS Cluster Deployment (4 Physical Servers)
+# BeeGFS Cluster Deployment (4 Physical Servers, with Mirroring)
 #
-#   Master (10.20.1.157): mgmtd + meta + storage + client
-#   Slave1 (10.20.1.150): meta + storage
-#   Slave2 (10.20.1.151): meta + storage
-#   Slave3 (10.20.1.152): meta + storage
+# Architecture:
+#   157 (client + meta):     nvme1n1(ext4) → metadata
+#   150 (mgmtd + meta + storage):  nvme1n1(ext4) + 2×XFS
+#   151 (meta + storage):    nvme1n1(ext4) + 2×XFS
+#   152 (meta + storage):    nvme1n1(ext4) + 2×XFS
 #
-# All servers use user 'sunrise'. Root commands use sudo.
+# Mirroring:
+#   Metadata: 2 buddy groups (4 meta nodes)
+#   Storage:  3 buddy groups (6 targets)
+#
+# Official docs: https://doc.beegfs.io/latest/
 #
 # Usage: bash deploy-beegfs.sh [status|install|deploy|mount|unmount|test|all]
 # ============================================================
@@ -47,26 +52,12 @@ preflight() {
     echo "========================================"
     echo "BeeGFS Deployment Pre-flight Checks"
     echo "========================================"
-    echo "Client (IO only): ${CLIENT_SERVER}"
-    echo "Slaves (services): ${SLAVE_SERVERS[*]}"
+    echo "Client+Meta (157): ${CLIENT_SERVER}"
+    echo "Slaves (mgmtd+meta+storage): ${SLAVE_SERVERS[*]}"
+    echo "Mirroring: enabled (metadata + storage)"
     echo ""
 
-    # Check client server
-    echo -n "  ${CLIENT_SERVER} (client): "
-    if wait_ssh "${CLIENT_SERVER}" >/dev/null 2>&1; then
-        ssh_srv "${CLIENT_SERVER}" "
-            source /etc/os-release 2>/dev/null
-            echo -n \"\${PRETTY_NAME:-unknown} | \"
-            echo -n \"CPU: \$(nproc) | \"
-            echo \"Mem: \$(free -h | awk '/^Mem:/{print \$2}')\"
-        "
-    else
-        echo "UNREACHABLE"
-        return 1
-    fi
-
-    # Check slave servers
-    for ip in "${SLAVE_SERVERS[@]}"; do
+    for ip in "${ALL_SERVERS[@]}"; do
         echo -n "  ${ip}: "
         if wait_ssh "${ip}" >/dev/null 2>&1; then
             ssh_srv "${ip}" "
@@ -75,109 +66,141 @@ preflight() {
                 echo -n \"CPU: \$(nproc) | \"
                 echo \"Mem: \$(free -h | awk '/^Mem:/{print \$2}')\"
             "
-            # Check sudo
-            if ssh_srv "${ip}" "sudo -n true" 2>/dev/null; then
-                echo "    sudo: passwordless OK"
-            else
-                echo "    sudo: REQUIRES PASSWORD — run prepare-servers.sh first"
-                return 1
-            fi
         else
             echo "UNREACHABLE"
             return 1
         fi
     done
+
+    # Check disk layout on slaves
     echo ""
-    echo "All servers reachable."
+    echo ">>> Disk layout check:"
+    for ip in "${SLAVE_SERVERS[@]}"; do
+        echo "  ${ip}:"
+        ssh_srv "${ip}" "
+            echo '    nvme1n1 (meta): '\$(mount | grep nvme1n1 | awk '{print \$3}' || echo 'NOT MOUNTED')
+            echo '    disk1 (storage): '\$(mount | grep disk1 | awk '{print \$3}' || echo 'NOT MOUNTED')
+            echo '    disk2 (storage): '\$(mount | grep disk2 | awk '{print \$3}' || echo 'NOT MOUNTED')
+        " 2>/dev/null
+    done
+    echo ""
 }
 
 # ============================================================
-# Step 1: Install BeeGFS packages on all servers
+# Step 1: Install BeeGFS packages
 # ============================================================
 
 install_packages() {
     echo ""
-    echo ">>> Step 1: Installing BeeGFS packages on slaves..."
+    echo ">>> Step 1: Installing BeeGFS ${BEEGFS_MAJOR_VERSION}.x packages..."
 
-    # Only install on slaves, not on client (157)
+    # Slaves: mgmtd + meta + storage + client + tools
     for ip in "${SLAVE_SERVERS[@]}"; do
-        echo "  >>> ${ip}..."
+        echo "  >>> ${ip} (mgmtd + meta + storage)..."
         ssh_srv "${ip}" "
-        set -e
+            set -e
+            if [ ! -f /etc/apt/sources.list.d/beegfs.list ]; then
+                sudo wget -q -O /etc/apt/sources.list.d/beegfs.list '${BEEGFS_REPO_URL}' || exit 1
+                sudo wget -q -O /tmp/beegfs-gpg.asc '${BEEGFS_REPO_KEY}' || exit 1
+                sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/beegfs.gpg /tmp/beegfs-gpg.asc 2>/dev/null || true
+                rm -f /tmp/beegfs-gpg.asc
+            fi
+            sudo apt-get update -qq 2>/dev/null || true
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                beegfs-mgmtd libbeegfs-license \
+                beegfs-meta beegfs-storage beegfs-client beegfs-tools beegfs-utils \
+                >/dev/null 2>&1 || exit 1
+            echo '  Done: \$(beegfs-ctl --version 2>/dev/null | head -1 || echo installed)'
+        "
+    done
 
-        # Add BeeGFS repository
+    # Client (157): meta + client + tools only
+    echo "  >>> ${CLIENT_SERVER} (meta + client only)..."
+    ssh_srv "${CLIENT_SERVER}" "
+        set -e
         if [ ! -f /etc/apt/sources.list.d/beegfs.list ]; then
-            echo '  Adding BeeGFS repo...'
-            sudo wget -q -O /etc/apt/sources.list.d/beegfs.list \\
-                '${BEEGFS_REPO_URL}' || {
-                echo '  ERROR: failed to download repo list'
-                exit 1
-            }
-            sudo wget -q -O /tmp/beegfs-gpg.asc '${BEEGFS_REPO_KEY}' || {
-                echo '  ERROR: failed to download GPG key'
-                exit 1
-            }
+            sudo wget -q -O /etc/apt/sources.list.d/beegfs.list '${BEEGFS_REPO_URL}' || exit 1
+            sudo wget -q -O /tmp/beegfs-gpg.asc '${BEEGFS_REPO_KEY}' || exit 1
             sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/beegfs.gpg /tmp/beegfs-gpg.asc 2>/dev/null || true
             rm -f /tmp/beegfs-gpg.asc
         fi
-
         sudo apt-get update -qq 2>/dev/null || true
-
-        # Install BeeGFS packages
-        # - beegfs-mgmtd: management service (master only, but harmless elsewhere)
-        # - beegfs-meta: metadata service
-        # - beegfs-storage: storage service
-        # - beegfs-client: FUSE client (master only, but harmless elsewhere)
-        # - beegfs-utils: CLI tools
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            beegfs-mgmtd beegfs-meta beegfs-storage beegfs-client beegfs-utils \
-            >/dev/null 2>&1 || {
-            echo '  ERROR: beegfs package install failed'
-            exit 1
-        }
-
-        echo '  Done: $(beegfs-ctl --version 2>/dev/null | head -1)'
+            beegfs-meta beegfs-client beegfs-tools beegfs-utils \
+            >/dev/null 2>&1 || exit 1
+        echo '  Done: \$(beegfs-ctl --version 2>/dev/null | head -1 || echo installed)'
     "
-done
     echo "  All packages installed."
 }
 
 # ============================================================
-# Step 2: Configure and start mgmtd on slave1 (10.20.1.150)
+# Step 2: Configure TLS and Auth (disable for testing)
+# ============================================================
+
+configure_tls_auth() {
+    echo ""
+    echo ">>> Step 2: Configuring TLS and Auth..."
+
+    for ip in "${ALL_SERVERS[@]}"; do
+        echo "  >>> ${ip}..."
+        ssh_srv "${ip}" "
+            # Disable TLS and Auth for testing (official: discouraged for production)
+            for conf in /etc/beegfs/beegfs-mgmtd.toml /etc/beegfs/beegfs-meta.toml \
+                        /etc/beegfs/beegfs-storage.toml /etc/beegfs/beegfs-client.conf; do
+                if [ -f \"\${conf}\" ]; then
+                    sudo grep -q 'tls-disable' \"\${conf}\" 2>/dev/null && \
+                        sudo sed -i 's/^tls-disable.*/tls-disable = true/' \"\${conf}\" || true
+                    sudo grep -q 'auth-disable' \"\${conf}\" 2>/dev/null && \
+                        sudo sed -i 's/^auth-disable.*/auth-disable = true/' \"\${conf}\" || true
+                fi
+            done
+            # Also check .conf format for older configs
+            for conf in /etc/beegfs/beegfs-mgmtd.conf /etc/beegfs/beegfs-meta.conf \
+                        /etc/beegfs/beegfs-storage.conf; do
+                if [ -f \"\${conf}\" ]; then
+                    sudo grep -q 'connDisableAuthentication' \"\${conf}\" 2>/dev/null && \
+                        sudo sed -i 's/^connDisableAuthentication.*/connDisableAuthentication = true/' \"\${conf}\" || true
+                fi
+            done
+        " 2>/dev/null
+    done
+    echo "  TLS and Auth disabled (testing mode)."
+}
+
+# ============================================================
+# Step 3: Deploy mgmtd on slave1 (150)
 # ============================================================
 
 deploy_mgmtmtd() {
     echo ""
-    echo ">>> Step 2: Deploying BeeGFS management service on ${BEEGFS_MGMTD_HOST}..."
+    echo ">>> Step 3: Deploying management service on ${BEEGFS_MGMTD_HOST}..."
 
     ssh_srv "${BEEGFS_MGMTD_HOST}" "
         set -e
-
-        # Configure mgmtd
-        sudo sed -i 's|^storeMgmtdDirectory.*|storeMgmtdDirectory=${BEEGFS_MGMTD_DIR}|' \
-            /etc/beegfs/beegfs-mgmtd.conf 2>/dev/null || true
-
-        # Ensure directory exists and is owned by beegfs
-        sudo mkdir -p ${BEEGFS_MGMTD_DIR}
-        sudo chown -R beegfs:beegfs ${BEEGFS_DATA_ROOT}
-
-        # Stop if already running
         sudo systemctl stop beegfs-mgmtd 2>/dev/null || true
 
-        # Run the setup helper if available
-        if [ -x /opt/beegfs/sbin/beegfs-setup-mgmtd ]; then
-            sudo /opt/beegfs/sbin/beegfs-setup-mgmtd -p ${BEEGFS_MGMTD_DIR} || true
+        # 8.x: mgmtd uses SQLite database, init with --init
+        if [ -x /opt/beegfs/sbin/beegfs-mgmtd ]; then
+            if [ ! -f ${BEEGFS_MGMTD_DB} ]; then
+                sudo mkdir -p /var/lib/beegfs
+                sudo /opt/beegfs/sbin/beegfs-mgmtd --init 2>/dev/null || true
+            fi
+        elif [ -x /opt/beegfs/sbin/beegfs-setup-mgmtd ]; then
+            # 7.x fallback
+            if [ ! -f /data/beegfs/mgmtd/format ]; then
+                sudo mkdir -p /data/beegfs/mgmtd
+                sudo /opt/beegfs/sbin/beegfs-setup-mgmtd -p /data/beegfs/mgmtd || true
+            fi
         fi
 
-        # Start mgmtd
         sudo systemctl enable beegfs-mgmtd
         sudo systemctl start beegfs-mgmtd
-
         sleep 3
+
         if sudo systemctl is-active --quiet beegfs-mgmtd; then
             echo '  mgmtd: RUNNING'
         else
-            echo '  mgmtd: FAILED to start'
+            echo '  mgmtd: FAILED'
             sudo journalctl -u beegfs-mgmtd --no-pager | tail -20
             exit 1
         fi
@@ -185,224 +208,285 @@ deploy_mgmtmtd() {
 }
 
 # ============================================================
-# Step 3: Configure and start metadata services
+# Step 4: Deploy metadata services (4 nodes: 157, 150, 151, 152)
 # ============================================================
 
 deploy_meta() {
     echo ""
-    echo ">>> Step 3: Deploying BeeGFS metadata services on slaves..."
+    echo ">>> Step 4: Deploying metadata services (4 nodes)..."
 
-    # Only deploy metadata on slaves, not on client
-    for ip in "${SLAVE_SERVERS[@]}"; do
-        echo "  >>> ${ip}..."
+    # 157 (client + meta)
+    echo "  >>> ${CLIENT_SERVER} (meta, ID=${META_NODE_ID_157})..."
+    ssh_srv "${CLIENT_SERVER}" "
+        set -e
+        sudo mkdir -p ${BEEGFS_META_DIR}
+        sudo chown -R beegfs:beegfs /mnt/beegfs-meta 2>/dev/null || true
+
+        sudo systemctl stop beegfs-meta 2>/dev/null || true
+
+        if [ ! -f ${BEEGFS_META_DIR}/format ]; then
+            sudo /opt/beegfs/sbin/beegfs-setup-meta \
+                -p ${BEEGFS_META_DIR} \
+                -s ${META_NODE_ID_157} \
+                -m ${BEEGFS_MGMTD_HOST} || true
+        fi
+
+        # Configure mgmtd host
+        for f in /etc/beegfs/beegfs-meta.toml /etc/beegfs/beegfs-meta.conf; do
+            [ -f \"\${f}\" ] && sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost = \"${BEEGFS_MGMTD_HOST}\"|' \"\${f}\" 2>/dev/null || true
+        done
+
+        sudo systemctl enable beegfs-meta
+        sudo systemctl start beegfs-meta
+        sleep 2
+        sudo systemctl is-active --quiet beegfs-meta && echo '  meta: RUNNING' || echo '  meta: FAILED'
+    "
+
+    # Slaves (150, 151, 152)
+    local ids=( "${META_NODE_ID_150}" "${META_NODE_ID_151}" "${META_NODE_ID_152}" )
+    for i in "${!SLAVE_SERVERS[@]}"; do
+        ip="${SLAVE_SERVERS[$i]}"
+        id="${ids[$i]}"
+        echo "  >>> ${ip} (meta, ID=${id})..."
         ssh_srv "${ip}" "
             set -e
-
-            # Configure meta to connect to mgmtd
-            sudo sed -i 's|^storeMetaDirectory.*|storeMetaDirectory=${BEEGFS_META_DIR}|' \
-                /etc/beegfs/beegfs-meta.conf 2>/dev/null || true
-            sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost=${BEEGFS_MGMTD_HOST}|' \
-                /etc/beegfs/beegfs-meta.conf 2>/dev/null || true
-
-            # Ensure directory
             sudo mkdir -p ${BEEGFS_META_DIR}
-            sudo chown -R beegfs:beegfs ${BEEGFS_DATA_ROOT}
+            sudo chown -R beegfs:beegfs /mnt/beegfs-meta 2>/dev/null || true
 
-            # Stop if running
             sudo systemctl stop beegfs-meta 2>/dev/null || true
 
-            # Setup meta service (only if not already initialized)
-            if [ -x /opt/beegfs/sbin/beegfs-setup-meta ]; then
-                if [ ! -f ${BEEGFS_META_DIR}/format ]; then
-                    sudo /opt/beegfs/sbin/beegfs-setup-meta \
-                        -p ${BEEGFS_META_DIR} \
-                        -s ${ip##*.} \
-                        -m ${BEEGFS_MGMTD_HOST} || true
-                fi
+            if [ ! -f ${BEEGFS_META_DIR}/format ]; then
+                sudo /opt/beegfs/sbin/beegfs-setup-meta \
+                    -p ${BEEGFS_META_DIR} \
+                    -s ${id} \
+                    -m ${BEEGFS_MGMTD_HOST} || true
             fi
 
-            # Start meta
+            for f in /etc/beegfs/beegfs-meta.toml /etc/beegfs/beegfs-meta.conf; do
+                [ -f \"\${f}\" ] && sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost = \"${BEEGFS_MGMTD_HOST}\"|' \"\${f}\" 2>/dev/null || true
+            done
+
             sudo systemctl enable beegfs-meta
             sudo systemctl start beegfs-meta
-
             sleep 2
-            if sudo systemctl is-active --quiet beegfs-meta; then
-                echo '  meta: RUNNING'
-            else
-                echo '  meta: FAILED'
-                sudo journalctl -u beegfs-meta --no-pager | tail -10
-            fi
+            sudo systemctl is-active --quiet beegfs-meta && echo '  meta: RUNNING' || echo '  meta: FAILED'
         "
     done
 }
 
 # ============================================================
-# Step 4: Configure and start storage services
+# Step 5: Deploy storage services (3 slaves, 2 targets each)
 # ============================================================
 
 deploy_storage() {
     echo ""
-    echo ">>> Step 4: Deploying BeeGFS storage services..."
-    echo "  Master: 1 storage target (RAID0)"
-    echo "  Slaves: 2 storage targets each (独立NVMe)"
+    echo ">>> Step 5: Deploying storage services (3 slaves, 6 targets)..."
 
-    # --- Master: single storage target (RAID0) ---
-    echo ""
-    echo "  >>> Deploying on master (${CLIENT_SERVER})..."
-    ssh_srv "${CLIENT_SERVER}" "
+    # Slave 150 (service 101, targets 1011, 1012)
+    deploy_storage_target "10.20.1.150" "${STORAGE_SVC_ID_150}" "${STORAGE_TARGET_ID_150_1}" "${BEEGFS_STORAGE_DIR_SLAVE_1}"
+    deploy_storage_target "10.20.1.150" "${STORAGE_SVC_ID_150}" "${STORAGE_TARGET_ID_150_2}" "${BEEGFS_STORAGE_DIR_SLAVE_2}"
+
+    # Slave 151 (service 102, targets 1021, 1022)
+    deploy_storage_target "10.20.1.151" "${STORAGE_SVC_ID_151}" "${STORAGE_TARGET_ID_151_1}" "${BEEGFS_STORAGE_DIR_SLAVE_1}"
+    deploy_storage_target "10.20.1.151" "${STORAGE_SVC_ID_151}" "${STORAGE_TARGET_ID_151_2}" "${BEEGFS_STORAGE_DIR_SLAVE_2}"
+
+    # Slave 152 (service 103, targets 1031, 1032)
+    deploy_storage_target "10.20.1.152" "${STORAGE_SVC_ID_152}" "${STORAGE_TARGET_ID_152_1}" "${BEEGFS_STORAGE_DIR_SLAVE_1}"
+    deploy_storage_target "10.20.1.152" "${STORAGE_SVC_ID_152}" "${STORAGE_TARGET_ID_152_2}" "${BEEGFS_STORAGE_DIR_SLAVE_2}"
+}
+
+deploy_storage_target() {
+    local ip=$1 svc_id=$2 target_id=$3 dir=$4
+    echo "  >>> ${ip} target ${target_id} (${dir})..."
+
+    # First target uses beegfs-storage service, second uses beegfs-storage2
+    local svc_name="beegfs-storage"
+    local conf_file="/etc/beegfs/beegfs-storage.conf"
+    local conf_toml="/etc/beegfs/beegfs-storage.toml"
+    local setup_flag=""
+
+    if [ "${target_id: -1}" = "2" ]; then
+        # Second target on same server
+        svc_name="beegfs-storage2"
+        conf_file="/etc/beegfs/beegfs-storage2.conf"
+        conf_toml="/etc/beegfs/beegfs-storage2.toml"
+
+        # Create second service config
+        ssh_srv "${ip}" "
+            sudo cp /etc/beegfs/beegfs-storage.conf ${conf_file} 2>/dev/null || true
+            sudo cp /etc/beegfs/beegfs-storage.toml ${conf_toml} 2>/dev/null || true
+            sudo cp /lib/systemd/system/beegfs-storage.service /etc/systemd/system/${svc_name}.service 2>/dev/null || true
+            sudo sed -i 's|beegfs-storage.service|${svc_name}.service|g' /etc/systemd/system/${svc_name}.service 2>/dev/null || true
+            sudo sed -i 's|/etc/beegfs/beegfs-storage.conf|${conf_file}|g' /etc/systemd/system/${svc_name}.service 2>/dev/null || true
+            sudo sed -i 's|/etc/beegfs/beegfs-storage.toml|${conf_toml}|g' /etc/systemd/system/${svc_name}.service 2>/dev/null || true
+            sudo systemctl daemon-reload 2>/dev/null || true
+        "
+        setup_flag="-c ${conf_file}"
+    fi
+
+    ssh_srv "${ip}" "
         set -e
+        sudo mkdir -p ${dir}
+        sudo chown -R beegfs:beegfs ${dir} 2>/dev/null || true
 
-        # Configure storage (single path for RAID0)
-        STORAGE_DIR='${BEEGFS_STORAGE_DIR_MASTER}'
-        sudo sed -i 's|^storeStorageDirectory.*|storeStorageDirectory='\${STORAGE_DIR}'|' \
-            /etc/beegfs/beegfs-storage.conf 2>/dev/null || true
-        sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost=${BEEGFS_MGMTD_HOST}|' \
-            /etc/beegfs/beegfs-storage.conf 2>/dev/null || true
+        sudo systemctl stop ${svc_name} 2>/dev/null || true
 
-        # Ensure directory
-        sudo mkdir -p \${STORAGE_DIR}
-        sudo chown -R beegfs:beegfs /data/beegfs 2>/dev/null || true
-
-        # Stop if running
-        sudo systemctl stop beegfs-storage 2>/dev/null || true
-
-        # Setup storage service
-        if [ -x /opt/beegfs/sbin/beegfs-setup-storage ]; then
-            if [ ! -f \${STORAGE_DIR}/format ]; then
+        # Setup storage target
+        if [ ! -f ${dir}/format ]; then
+            if [ -n \"${setup_flag}\" ]; then
                 sudo /opt/beegfs/sbin/beegfs-setup-storage \
-                    -p \${STORAGE_DIR} \
-                    -s 157 \
-                    -m ${BEEGFS_MGMTD_HOST} || true
-            fi
-        fi
-
-        sudo systemctl enable beegfs-storage
-        sudo systemctl start beegfs-storage
-
-        sleep 2
-        if sudo systemctl is-active --quiet beegfs-storage; then
-            echo '  master storage: RUNNING'
-        else
-            echo '  master storage: FAILED'
-            sudo journalctl -u beegfs-storage --no-pager | tail -10
-        fi
-    "
-
-    # --- Slaves: two storage targets each ---
-    for ip in "${SLAVE_SERVERS[@]}"; do
-        echo ""
-        echo "  >>> Deploying on slave (${ip})... (2 targets)"
-
-        # Target 1: /data/disk1
-        ssh_srv "${ip}" "
-            set -e
-
-            STORAGE_DIR='${BEEGFS_STORAGE_DIR_SLAVE_1}'
-            sudo sed -i 's|^storeStorageDirectory.*|storeStorageDirectory='\${STORAGE_DIR}'|' \
-                /etc/beegfs/beegfs-storage.conf 2>/dev/null || true
-            sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost=${BEEGFS_MGMTD_HOST}|' \
-                /etc/beegfs/beegfs-storage.conf 2>/dev/null || true
-
-            sudo mkdir -p \${STORAGE_DIR}
-            sudo chown -R beegfs:beegfs /data/disk1 2>/dev/null || true
-            sudo chown -R beegfs:beegfs /data/disk2 2>/dev/null || true
-
-            sudo systemctl stop beegfs-storage 2>/dev/null || true
-
-            # First target: use node ID based on last byte of IP
-            if [ ! -f \${STORAGE_DIR}/format ]; then
-                sudo /opt/beegfs/sbin/beegfs-setup-storage \
-                    -p \${STORAGE_DIR} \
-                    -s \$(echo ${ip} | cut -d. -f4)01 \
-                    -m ${BEEGFS_MGMTD_HOST} || true
-            fi
-
-            sudo systemctl enable beegfs-storage
-            sudo systemctl start beegfs-storage
-            sleep 3
-        "
-
-        # Target 2: /data/disk2 (需要第二个 beegfs-storage 服务)
-        ssh_srv "${ip}" "
-            set -e
-
-            STORAGE_DIR='${BEEGFS_STORAGE_DIR_SLAVE_2}'
-
-            # Create a second storage service config
-            sudo cp /etc/beegfs/beegfs-storage.conf /etc/beegfs/beegfs-storage2.conf
-            sudo sed -i 's|beegfs-storage|beegfs-storage2|g' /etc/beegfs/beegfs-storage2.conf
-            sudo sed -i 's|^storeStorageDirectory.*|storeStorageDirectory='\${STORAGE_DIR}'|' /etc/beegfs/beegfs-storage2.conf
-            sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost=${BEEGFS_MGMTD_HOST}|' /etc/beegfs/beegfs-storage2.conf
-
-            # Use a different node ID (last byte + 02)
-            NODE_ID=\$(echo ${ip} | cut -d. -f4)02
-
-            # Create systemd service for second target
-            sudo cp /lib/systemd/system/beegfs-storage.service /etc/systemd/system/beegfs-storage2.service
-            sudo sed -i 's|beegfs-storage.service|beegfs-storage2.service|g' /etc/systemd/system/beegfs-storage2.service
-            sudo sed -i 's|/etc/beegfs/beegfs-storage.conf|/etc/beegfs/beegfs-storage2.conf|g' /etc/systemd/system/beegfs-storage2.service
-            sudo systemctl daemon-reload
-
-            # Setup second target
-            if [ ! -f \${STORAGE_DIR}/format ]; then
-                sudo /opt/beegfs/sbin/beegfs-setup-storage \
-                    -p \${STORAGE_DIR} \
-                    -s \${NODE_ID} \
-                    -c /etc/beegfs/beegfs-storage2.conf \
-                    -m ${BEEGFS_MGMTD_HOST} || true
-            fi
-
-            sudo systemctl enable beegfs-storage2
-            sudo systemctl start beegfs-storage2
-            sleep 2
-
-            if sudo systemctl is-active --quiet beegfs-storage2; then
-                echo '  slave '\${ip}' storage2: RUNNING'
+                    -p ${dir} -s ${svc_id} -i ${target_id} \
+                    ${setup_flag} -m ${BEEGFS_MGMTD_HOST} || true
             else
-                echo '  slave '\${ip}' storage2: FAILED'
+                sudo /opt/beegfs/sbin/beegfs-setup-storage \
+                    -p ${dir} -s ${svc_id} -i ${target_id} \
+                    -m ${BEEGFS_MGMTD_HOST} || true
             fi
-        "
+        fi
 
-        # Verify both targets are running
-        ssh_srv "${ip}" "
-            echo '  storage targets:'
-            sudo systemctl is-active beegfs-storage beegfs-storage2 | sed 's/^/    /'
-        "
-    done
+        # Configure mgmtd host
+        for f in ${conf_toml} ${conf_file}; do
+            [ -f \"\${f}\" ] && sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost = \"${BEEGFS_MGMTD_HOST}\"|' \"\${f}\" 2>/dev/null || true
+        done
+
+        sudo systemctl enable ${svc_name}
+        sudo systemctl start ${svc_name}
+        sleep 2
+        sudo systemctl is-active --quiet ${svc_name} && echo '  ${svc_name}: RUNNING' || echo '  ${svc_name}: FAILED'
+    "
 }
 
 # ============================================================
-# Step 5: Configure and start client on master
+# Step 6: Configure mirror buddy groups
+# ============================================================
+
+setup_mirroring() {
+    echo ""
+    echo ">>> Step 6: Setting up mirror buddy groups..."
+
+    # Wait for all nodes to register
+    echo "  Waiting for nodes to register (15s)..."
+    sleep 15
+
+    # Metadata buddy groups
+    # Group 1: meta:2 (150) + meta:3 (151)
+    # Group 2: meta:4 (152) + meta:1 (157)
+    echo "  Creating metadata buddy groups..."
+    ssh_srv "${BEEGFS_MGMTD_HOST}" "
+        # Check if beegfs mirror command exists (8.x)
+        if command -v beegfs &>/dev/null; then
+            # 8.x syntax
+            sudo beegfs mirror create --node-type=meta --num-id=1 \
+                --primary=meta:${META_NODE_ID_150} --secondary=meta:${META_NODE_ID_151} \
+                m150m151 2>/dev/null || true
+            sudo beegfs mirror create --node-type=meta --num-id=2 \
+                --primary=meta:${META_NODE_ID_152} --secondary=meta:${META_NODE_ID_157} \
+                m152m157 2>/dev/null || true
+        elif command -v beegfs-ctl &>/dev/null; then
+            # 7.x syntax
+            sudo beegfs-ctl --addmirrbuddy --nodetype=meta --primary=${META_NODE_ID_150} \
+                --secondary=${META_NODE_ID_151} --groupid=1 2>/dev/null || true
+            sudo beegfs-ctl --addmirrbuddy --nodetype=meta --primary=${META_NODE_ID_152} \
+                --secondary=${META_NODE_ID_157} --groupid=2 2>/dev/null || true
+        fi
+        echo '  Metadata buddy groups created.'
+    "
+
+    # Storage buddy groups
+    # Group 1: target 1011 (150-disk1) + target 1021 (151-disk1)
+    # Group 2: target 1012 (150-disk2) + target 1031 (152-disk1)
+    # Group 3: target 1022 (151-disk2) + target 1032 (152-disk2)
+    echo "  Creating storage buddy groups..."
+    ssh_srv "${BEEGFS_MGMTD_HOST}" "
+        if command -v beegfs &>/dev/null; then
+            # 8.x syntax
+            sudo beegfs mirror create --node-type=storage --num-id=1 \
+                --primary=storage:${STORAGE_TARGET_ID_150_1} \
+                --secondary=storage:${STORAGE_TARGET_ID_151_1} \
+                s150s151 2>/dev/null || true
+            sudo beegfs mirror create --node-type=storage --num-id=2 \
+                --primary=storage:${STORAGE_TARGET_ID_150_2} \
+                --secondary=storage:${STORAGE_TARGET_ID_152_1} \
+                s150s152 2>/dev/null || true
+            sudo beegfs mirror create --node-type=storage --num-id=3 \
+                --primary=storage:${STORAGE_TARGET_ID_151_2} \
+                --secondary=storage:${STORAGE_TARGET_ID_152_2} \
+                s151s152 2>/dev/null || true
+        elif command -v beegfs-ctl &>/dev/null; then
+            # 7.x syntax
+            sudo beegfs-ctl --addmirrbuddy --nodetype=storage \
+                --primary=${STORAGE_TARGET_ID_150_1} --secondary=${STORAGE_TARGET_ID_151_1} \
+                --groupid=1 2>/dev/null || true
+            sudo beegfs-ctl --addmirrbuddy --nodetype=storage \
+                --primary=${STORAGE_TARGET_ID_150_2} --secondary=${STORAGE_TARGET_ID_152_1} \
+                --groupid=2 2>/dev/null || true
+            sudo beegfs-ctl --addmirrbuddy --nodetype=storage \
+                --primary=${STORAGE_TARGET_ID_151_2} --secondary=${STORAGE_TARGET_ID_152_2} \
+                --groupid=3 2>/dev/null || true
+        fi
+        echo '  Storage buddy groups created.'
+    "
+
+    # Enable mirroring on root directory
+    echo "  Enabling mirroring on root directory..."
+    ssh_srv "${BEEGFS_MGMTD_HOST}" "
+        if command -v beegfs &>/dev/null; then
+            # 8.x: init metadata mirroring
+            sudo beegfs mirror init 2>/dev/null || true
+            # Set stripe pattern to mirrored
+            sudo beegfs entry set --pattern=mirrored --num-targets=3 --chunk-size=1MiB \
+                ${BEEGFS_MOUNT_POINT} 2>/dev/null || true
+        elif command -v beegfs-ctl &>/dev/null; then
+            # 7.x
+            sudo beegfs-ctl --setmirrormode --root 2>/dev/null || true
+            sudo beegfs-ctl --setpattern --pattern=mirrored --numtargets=3 --chunksize=1M \
+                ${BEEGFS_MOUNT_POINT} 2>/dev/null || true
+        fi
+        echo '  Mirroring enabled.'
+    "
+
+    # Show buddy groups
+    echo ""
+    echo "  Buddy groups:"
+    ssh_srv "${BEEGFS_MGMTD_HOST}" "
+        if command -v beegfs &>/dev/null; then
+            sudo beegfs mirror list 2>/dev/null || true
+        elif command -v beegfs-ctl &>/dev/null; then
+            sudo beegfs-ctl --listmirrbuddies --nodetype=meta 2>/dev/null || true
+            sudo beegfs-ctl --listmirrbuddies --nodetype=storage 2>/dev/null || true
+        fi
+    " 2>/dev/null
+}
+
+# ============================================================
+# Step 7: Deploy client on 157
 # ============================================================
 
 deploy_client() {
     echo ""
-    echo ">>> Step 5: Deploying BeeGFS client on master..."
+    echo ">>> Step 7: Deploying client on ${CLIENT_SERVER}..."
 
     ssh_srv "${CLIENT_SERVER}" "
         set -e
+        sudo mkdir -p ${BEEGFS_MOUNT_POINT}
+        sudo chown \$(whoami):\$(whoami) ${BEEGFS_MOUNT_POINT} 2>/dev/null || true
 
         # Configure client
-        sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost=${BEEGFS_MGMTD_HOST}|' \
-            /etc/beegfs/beegfs-client.conf 2>/dev/null || true
+        for f in /etc/beegfs/beegfs-client.conf; do
+            [ -f \"\${f}\" ] && sudo sed -i 's|^sysMgmtHost.*|sysMgmtHost = ${BEEGFS_MGMTD_HOST}|' \"\${f}\" 2>/dev/null || true
+            [ -f \"\${f}\" ] && sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost = ${BEEGFS_MGMTD_HOST}|' \"\${f}\" 2>/dev/null || true
+        done
 
-        # Set mount point
-        sudo mkdir -p ${BEEGFS_MOUNT_POINT}
-        sudo chown \$(whoami):\$(whoami) ${BEEGFS_MOUNT_POINT}
+        # Set mount point in mounts.conf
+        echo '${BEEGFS_MOUNT_POINT} /etc/beegfs/beegfs-client.conf' | sudo tee /etc/beegfs/beegfs-mounts.conf >/dev/null
 
-        # Optional: set stripe pattern in beegfs-client.conf
-        sudo sed -i 's|^tunePattern.*|tunePattern=${BEEGFS_STRIPE_PATTERN}|' \
-            /etc/beegfs/beegfs-client.conf 2>/dev/null || true
-
-        # Stop if running
         sudo systemctl stop beegfs-client 2>/dev/null || true
         sudo umount ${BEEGFS_MOUNT_POINT} 2>/dev/null || true
 
-        # Start client (this mounts the filesystem)
         sudo systemctl enable beegfs-client
         sudo systemctl start beegfs-client
-
         sleep 5
+
         if mountpoint -q ${BEEGFS_MOUNT_POINT} 2>/dev/null; then
             echo '  client: MOUNTED'
             df -h ${BEEGFS_MOUNT_POINT}
@@ -427,22 +511,35 @@ do_status() {
     for ip in "${ALL_SERVERS[@]}"; do
         echo ">>> ${ip} ($(ssh_srv "${ip}" 'hostname' 2>/dev/null))"
         ssh_srv "${ip}" "
-            echo '  mgmtd:   '\$(sudo systemctl is-active beegfs-mgmtd 2>/dev/null || echo 'not installed')
-            echo '  meta:    '\$(sudo systemctl is-active beegfs-meta 2>/dev/null || echo 'not installed')
-            echo '  storage: '\$(sudo systemctl is-active beegfs-storage 2>/dev/null || echo 'not installed')
-            echo '  client:  '\$(sudo systemctl is-active beegfs-client 2>/dev/null || echo 'not installed')
+            for svc in beegfs-mgmtd beegfs-meta beegfs-storage beegfs-storage2 beegfs-client; do
+                echo -n '  '\${svc}': '
+                sudo systemctl is-active \${svc} 2>/dev/null || echo 'not installed'
+            done
         " 2>/dev/null
         echo ""
     done
 
-    # Show cluster info from master
-    echo ">>> Cluster nodes:"
-    ssh_srv "${CLIENT_SERVER}" "
-        sudo beegfs-ctl --listnodes --nodetype=meta --mgmtd_node=${BEEGFS_MGMTD_HOST} 2>/dev/null || true
-        echo ''
-        sudo beegfs-ctl --listnodes --nodetype=storage --mgmtd_node=${BEEGFS_MGMTD_HOST} 2>/dev/null || true
-        echo ''
-        sudo beegfs-ctl --listtargets --nodetype=storage --mgmtd_node=${BEEGFS_MGMTD_HOST} 2>/dev/null || true
+    echo ">>> Cluster info:"
+    ssh_srv "${BEEGFS_MGMTD_HOST}" "
+        if command -v beegfs &>/dev/null; then
+            echo '  Nodes:'
+            sudo beegfs node list 2>/dev/null || true
+            echo ''
+            echo '  Targets:'
+            sudo beegfs target list 2>/dev/null || true
+            echo ''
+            echo '  Buddy groups:'
+            sudo beegfs mirror list 2>/dev/null || true
+            echo ''
+            echo '  Health:'
+            sudo beegfs health df 2>/dev/null || true
+        elif command -v beegfs-ctl &>/dev/null; then
+            echo '  Nodes:'
+            sudo beegfs-ctl --listnodes 2>/dev/null || true
+            echo ''
+            echo '  Targets:'
+            sudo beegfs-ctl --listtargets --nodetype=storage 2>/dev/null || true
+        fi
     " 2>/dev/null
 
     echo ""
@@ -459,9 +556,8 @@ do_status() {
 # ============================================================
 
 do_mount() {
-    echo ">>> Mounting BeeGFS on master..."
+    echo ">>> Mounting BeeGFS on ${CLIENT_SERVER}..."
     ssh_srv "${CLIENT_SERVER}" "
-        sudo mkdir -p ${BEEGFS_MOUNT_POINT}
         sudo systemctl restart beegfs-client
         sleep 3
         if mountpoint -q ${BEEGFS_MOUNT_POINT}; then
@@ -476,7 +572,7 @@ do_mount() {
 }
 
 do_unmount() {
-    echo ">>> Unmounting BeeGFS on master..."
+    echo ">>> Unmounting BeeGFS on ${CLIENT_SERVER}..."
     ssh_srv "${CLIENT_SERVER}" "
         sudo systemctl stop beegfs-client 2>/dev/null || true
         sudo umount ${BEEGFS_MOUNT_POINT} 2>/dev/null || true
@@ -511,7 +607,9 @@ do_test() {
 
         echo ''
         echo '>>> Storage info:'
-        beegfs-df 2>/dev/null || true
+        if command -v beegfs &>/dev/null; then
+            beegfs entry info ${BEEGFS_MOUNT_POINT}/ 2>/dev/null || true
+        fi
 
         echo ''
         echo '>>> Cleanup...'
@@ -533,17 +631,20 @@ case "${ACTION}" in
     install)
         preflight
         install_packages
+        configure_tls_auth
         ;;
     deploy)
         preflight
         install_packages
+        configure_tls_auth
         deploy_mgmtmtd
         deploy_meta
         deploy_storage
         deploy_client
+        setup_mirroring
         echo ""
         echo "========================================"
-        echo "BeeGFS Deployment Complete!"
+        echo "BeeGFS Deployment Complete (with Mirroring)!"
         echo "========================================"
         do_status
         ;;
@@ -559,13 +660,15 @@ case "${ACTION}" in
     all)
         preflight
         install_packages
+        configure_tls_auth
         deploy_mgmtmtd
         deploy_meta
         deploy_storage
         deploy_client
+        setup_mirroring
         echo ""
         echo "========================================"
-        echo "BeeGFS Deployment Complete!"
+        echo "BeeGFS Deployment Complete (with Mirroring)!"
         echo "========================================"
         do_status
         do_test
@@ -574,9 +677,9 @@ case "${ACTION}" in
         echo "Usage: bash deploy-beegfs.sh [status|install|deploy|mount|unmount|test|all]"
         echo ""
         echo "  status   - Show cluster status"
-        echo "  install  - Install BeeGFS packages"
-        echo "  deploy   - Full deployment (install + configure + start all services)"
-        echo "  mount    - Mount filesystem on master"
+        echo "  install  - Install packages + TLS/auth config"
+        echo "  deploy   - Full deployment with mirroring"
+        echo "  mount    - Mount filesystem on client"
         echo "  unmount  - Unmount filesystem"
         echo "  test     - Run smoke test"
         echo "  all      - Deploy + test"

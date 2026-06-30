@@ -2,11 +2,14 @@
 set -euo pipefail
 
 # ============================================================
-# Performance Tuning for BeeGFS (run AFTER deployment)
+# Performance Tuning for BeeGFS (per official docs)
 #
-# Tuning: swap, THP, sysctl, I/O scheduler, fd limits
-# Most changes take effect immediately; fd limits may need
-# service restart.
+# Official doc: https://doc.beegfs.io/latest/advanced_topics/storage_tuning.html
+#
+# Key differences from Ceph/TiKV tuning:
+#   - THP: ENABLE (always) — BeeGFS recommends, opposite of Ceph
+#   - IO scheduler: deadline (not none)
+#   - dirty_ratio: 5/20 (per official docs)
 #
 # Usage: sudo bash tune-servers.sh
 # ============================================================
@@ -17,20 +20,16 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 echo "========================================"
-echo "Performance Tuning — BeeGFS"
+echo "Performance Tuning — BeeGFS (per official docs)"
 echo "Host: $(hostname)"
 echo "========================================"
 
 # ============================================================
-# 1. Disable swap
+# 1. Swap — disable
 # ============================================================
 
 echo ""
 echo ">>> Disabling swap..."
-echo "    Why: BeeGFS metadata and storage services use memory heavily."
-echo "    Swap causes latency spikes that hurt distributed performance."
-echo ""
-
 if swapon --show | grep -q '^/'; then
     swapoff -a
     sed -i '/\sswap\s/d' /etc/fstab
@@ -40,59 +39,66 @@ else
 fi
 
 # ============================================================
-# 2. Disable Transparent Huge Pages
+# 2. THP — ENABLE (opposite of Ceph!)
 # ============================================================
 
 echo ""
-echo ">>> Disabling Transparent Huge Pages..."
-echo "    Why: THP compaction stalls user-space for hundreds of ms,"
-echo "    deadly for latency-sensitive distributed storage."
-echo ""
+echo ">>> Enabling Transparent Huge Pages (per BeeGFS docs)..."
+echo "    Note: BeeGFS recommends THP=always, opposite of Ceph/TiKV"
 
-cat > /etc/systemd/system/disable-thp.service <<'EOF'
+cat > /etc/systemd/system/enable-thp.service <<'EOF'
 [Unit]
-Description=Disable Transparent Huge Pages
+Description=Enable Transparent Huge Pages (BeeGFS)
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c "echo never > /sys/kernel/mm/transparent_hugepage/enabled && echo never > /sys/kernel/mm/transparent_hugepage/defrag"
+ExecStart=/bin/sh -c "echo always > /sys/kernel/mm/transparent_hugepage/enabled && echo always > /sys/kernel/mm/transparent_hugepage/defrag"
 RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
 EOF
+
+# Remove old disable-thp service if exists
+systemctl disable disable-thp 2>/dev/null || true
+rm -f /etc/systemd/system/disable-thp.service
+
 systemctl daemon-reload
-systemctl enable disable-thp
-systemctl start disable-thp
+systemctl enable enable-thp
+systemctl start enable-thp
+
+# Apply immediately
+echo always > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || true
+echo always > /sys/kernel/mm/transparent_hugepage/defrag 2>/dev/null || true
+echo "  THP enabled (always)."
 
 # ============================================================
-# 3. Sysctl tuning
+# 3. Sysctl tuning (per official storage tuning docs)
 # ============================================================
 
 echo ""
-echo ">>> Sysctl tuning..."
+echo ">>> Sysctl tuning (per official docs)..."
 
 cat > /etc/sysctl.d/99-beegfs.conf <<'EOF'
-# Network — increase connection backlog and reduce TIME_WAIT
+# === Per BeeGFS official storage tuning docs ===
+
+# Virtual memory
+vm.dirty_background_ratio = 5
+vm.dirty_ratio = 20
+vm.vfs_cache_pressure = 50
+vm.min_free_kbytes = 262144
+vm.zone_reclaim_mode = 1
+
+# Network
 net.core.somaxconn = 32768
 net.ipv4.tcp_syncookies = 0
 net.ipv4.tcp_tw_reuse = 1
 net.ipv4.tcp_fin_timeout = 10
 net.ipv4.tcp_max_syn_backlog = 16384
-
-# Increase network buffer sizes for high throughput
 net.core.rmem_max = 134217728
 net.core.wmem_max = 134217728
 net.ipv4.tcp_rmem = 4096 87380 134217728
 net.ipv4.tcp_wmem = 4096 67392 134217728
-
-# Virtual memory — minimise swap, keep writes in memory
-vm.swappiness = 0
-vm.dirty_ratio = 10
-vm.dirty_background_ratio = 5
-vm.min_free_kbytes = 65536
-vm.dirty_expire_centisecs = 3000
-vm.dirty_writeback_centisecs = 500
 
 # File descriptors
 fs.file-max = 1000000
@@ -101,26 +107,26 @@ sysctl --system >/dev/null 2>&1
 echo "  Done."
 
 # ============================================================
-# 4. I/O scheduler — none for NVMe
+# 4. IO Scheduler — deadline (per official docs, NOT none)
 # ============================================================
 
 echo ""
-echo ">>> Setting I/O scheduler to none (best for NVMe)..."
+echo ">>> Setting IO scheduler to deadline (per official docs)..."
 
-for disk in /sys/block/nvme*/queue/scheduler; do
+for disk in /sys/block/nvme*/queue/scheduler /sys/block/sd*/queue/scheduler; do
     if [ -f "${disk}" ]; then
-        echo "none" > "${disk}" 2>/dev/null || true
+        echo "deadline" > "${disk}" 2>/dev/null || true
     fi
 done
 
-for disk in /sys/block/sd*/queue/scheduler; do
-    if [ -f "${disk}" ]; then
-        if grep -q '\[none\]' "${disk}" 2>/dev/null; then
-            :
-        else
-            echo "none" > "${disk}" 2>/dev/null || true
-        fi
-    fi
+# Increase request queue and read-ahead (per official docs)
+for dev in /sys/block/nvme* /sys/block/sd*; do
+    [ -d "${dev}" ] || continue
+    devname=$(basename "${dev}")
+    [ "${devname}" = "nvme0n1" ] && continue  # skip system disk
+    echo 4096 > "${dev}/queue/nr_requests" 2>/dev/null || true
+    echo 4096 > "${dev}/queue/read_ahead_kb" 2>/dev/null || true
+    echo 256 > "${dev}/queue/max_sectors_kb" 2>/dev/null || true
 done
 echo "  Done."
 
@@ -130,14 +136,12 @@ echo "  Done."
 
 echo ""
 echo ">>> Setting file descriptor limits..."
-
 cat > /etc/security/limits.d/99-beegfs.conf <<'EOF'
 root    soft    nofile  1000000
 root    hard    nofile  1000000
 *       soft    nofile  1000000
 *       hard    nofile  1000000
 EOF
-
 echo "  Done."
 
 # ============================================================
@@ -146,19 +150,66 @@ echo "  Done."
 
 echo ""
 echo ">>> Setting CPU governor to performance..."
-
 for gov in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-    if [ -f "${gov}" ]; then
-        echo "performance" > "${gov}" 2>/dev/null || true
-    fi
+    [ -f "${gov}" ] && echo "performance" > "${gov}" 2>/dev/null || true
 done
 echo "  Done."
 
+# ============================================================
+# 7. rc.local for non-persistent settings
+# ============================================================
+
+echo ""
+echo ">>> Creating rc.local for non-persistent settings..."
+
+cat > /etc/rc.local <<'EOF'
+#!/bin/bash
+# BeeGFS non-persistent tuning (per official docs)
+
+# THP
+echo always > /sys/kernel/mm/transparent_hugepage/enabled
+echo always > /sys/kernel/mm/transparent_hugepage/defrag
+
+# VM settings
+echo 5 > /proc/sys/vm/dirty_background_ratio
+echo 20 > /proc/sys/vm/dirty_ratio
+echo 50 > /proc/sys/vm/vfs_cache_pressure
+echo 262144 > /proc/sys/vm/min_free_kbytes
+echo 1 > /proc/sys/vm/zone_reclaim_mode
+
+# IO scheduler and queue settings for storage devices
+for dev in /sys/block/nvme* /sys/block/sd*; do
+    [ -d "${dev}" ] || continue
+    devname=$(basename "${dev}")
+    [ "${devname}" = "nvme0n1" ] && continue
+    echo deadline > "${dev}/queue/scheduler" 2>/dev/null || true
+    echo 4096 > "${dev}/queue/nr_requests" 2>/dev/null || true
+    echo 4096 > "${dev}/queue/read_ahead_kb" 2>/dev/null || true
+    echo 256 > "${dev}/queue/max_sectors_kb" 2>/dev/null || true
+done
+
+# CPU governor
+for gov in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+    [ -f "${gov}" ] && echo "performance" > "${gov}" 2>/dev/null || true
+done
+
+exit 0
+EOF
+chmod +x /etc/rc.local
+systemctl enable rc-local 2>/dev/null || true
+echo "  rc.local created."
+
 echo ""
 echo "========================================"
-echo "Tuning complete."
+echo "Tuning complete (per official BeeGFS docs)."
 echo "========================================"
 echo ""
-echo "Swap, THP, sysctl, I/O scheduler, CPU governor: immediate effect"
-echo "File descriptor limits: restart BeeGFS services to apply:"
-echo "  sudo systemctl restart beegfs-mgmtd beegfs-meta beegfs-storage beegfs-client"
+echo "Changes applied:"
+echo "  - THP: always (ENABLED, opposite of Ceph)"
+echo "  - IO scheduler: deadline (not none)"
+echo "  - dirty_ratio: 5/20 (per official)"
+echo "  - read_ahead: 4096KB"
+echo "  - CPU governor: performance"
+echo ""
+echo "Restart BeeGFS services to apply fd limits:"
+echo "  sudo systemctl restart beegfs-meta beegfs-storage beegfs-client"

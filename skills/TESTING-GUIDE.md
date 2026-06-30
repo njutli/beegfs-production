@@ -16,8 +16,8 @@
 # 所有服务必须 active
 sudo systemctl status beegfs-mgmtd beegfs-meta beegfs-storage beegfs-client --no-pager
 
-# 节点在线
-sudo beegfs-ctl --listnodes --mgmtd_node=10.20.1.157
+# 节点在线 (mgmtd on 150)
+sudo beegfs-ctl --listnodes --mgmtd_node=10.20.1.150
 
 # Storage targets 全部在线
 sudo beegfs-ctl --listtargets --nodetype=storage --mgmtd_node=10.20.1.157

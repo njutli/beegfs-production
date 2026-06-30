@@ -14,19 +14,27 @@
 
 ## 环境概况
 
-**重要**: 157 只做客户端，不部署任何 BeeGFS 服务。
+**架构**: 4 节点，启用 metadata + storage 镜像
 
-- **集群拓扑**：
-  - Client (10.20.1.157): 仅 FUSE 客户端挂载点
-  - Slave1 (10.20.1.150): mgmtd + meta + 2 storage targets
-  - Slave2-3 (10.20.1.151-152): meta + 2 storage targets each
-- **Storage Targets**: 6 个
-- **存储**：
-  - Slaves: 各 2×7TB 独立 NVMe → 各 2 targets
-- **网络**：10 GbE 管理网络 (eno12399) + 100 GbE 高速网络 (enp139s0f0np0)
-- **CPU**：96-128 cores per node, Intel Xeon Platinum 8462Y+
-- **内存**：1TB per node
-- **OS**：Ubuntu 22.04.5 LTS, kernel 5.15.0-170
+- **Client+Meta (10.20.1.157)**: client + metadata (nvme1n1 ext4)
+- **Slave1 (10.20.1.150)**: mgmtd + meta + 2 storage (nvme1n1 + 2×XFS)
+- **Slave2-3 (10.20.1.151-152)**: meta + 2 storage (同上)
+
+**镜像配置**:
+- Metadata: 2 buddy groups (4 meta nodes)
+- Storage: 3 buddy groups (6 targets)
+
+**磁盘**:
+- Metadata: nvme1n1 (894GB, ext4) — 独立盘，I/O 隔离
+- Storage: nvme2n1 + nvme3n1 (各 7TB, XFS) — 独立盘
+
+**网络**: 10 GbE (eno12399) + 100 GbE (enp139s0f0np0)
+
+**调优 (per 官方文档)**:
+- THP: always (启用，与 Ceph 相反)
+- IO 调度器: deadline
+- XFS 挂载: noatime,logbufs=8,logbsize=256k,largeio,inode64,swalloc,allocsize=131072k
+- dirty_ratio: 5/20
 
 ## 参考基线（JuiceFS+Ceph 项目）
 
@@ -39,13 +47,11 @@ JuiceFS + Ceph EC 4+2 (3 nodes, HDD-backed) 的 cold-r1 基线：
 - randwrite (bs=256K): 29.0 MiB/s
 - randrw (bs=256K): 15.1/14.7 MiB/s
 
-BeeGFS + NVMe + 100GbE 网络，预期性能应显著高于此基线。
+BeeGFS + NVMe + 100GbE + 镜像，预期性能应显著高于此基线。
 
-## 磁盘配置说明
+## 官方文档参考
 
-| 机器 | 磁盘配置 | Storage Targets |
-|------|----------|-----------------|
-| client (157) | 不动任何配置 | - |
-| slave1 | 2×7TB 独立 NVMe | 2 |
-| slave2 | 2×7TB 独立 NVMe | 2 |
-| slave3 | 2×7TB 独立 NVMe | 2 |
+- 架构: https://doc.beegfs.io/latest/architecture/overview.html
+- 镜像: https://doc.beegfs.io/latest/advanced_topics/mirroring.html
+- 存储调优: https://doc.beegfs.io/latest/advanced_topics/storage_tuning.html
+- 条带化: https://doc.beegfs.io/latest/advanced_topics/striping.html
