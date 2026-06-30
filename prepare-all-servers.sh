@@ -4,14 +4,8 @@ set -euo pipefail
 # ============================================================
 # Prepare All Servers
 #
-# Runs prepare-servers.sh on the master (locally) and on
-# all 3 slave servers (remotely via SSH).
-#
-# This script is designed to run ON the master server.
-# If run from WSL, it first SSHes to the master and executes
-# from there.
-#
-# Prerequisites: setup-ssh-keys.sh already completed
+# Client (157): 只准备客户端环境，不部署服务
+# Slaves (150-152): 准备完整的 BeeGFS 服务环境
 #
 # Usage: bash prepare-all-servers.sh
 # ============================================================
@@ -39,26 +33,31 @@ wait_ssh() {
     echo " timeout!"; return 1
 }
 
-# --- Master (local machine) ---
+# --- Client server (157) - only prepare client packages ---
 echo "========================================"
-echo "Preparing master server (local: ${MASTER_SERVER})"
+echo "Preparing client server (${CLIENT_SERVER})"
 echo "========================================"
 echo ""
 
-# Check if we're already on the master
-if hostname -I 2>/dev/null | grep -q "${MASTER_SERVER}"; then
-    sudo bash "${SCRIPT_DIR}/prepare-servers.sh"
-else
-    echo "Not on master. Copying scripts and running remotely..."
-    scp_srv "${MASTER_SERVER}" "${SCRIPT_DIR}/prepare-servers.sh" /tmp/prepare-servers.sh
-    scp_srv "${MASTER_SERVER}" "${SCRIPT_DIR}/config.sh" /tmp/beegfs-config.sh
-    ssh_srv "${MASTER_SERVER}" "sudo bash /tmp/prepare-servers.sh"
-fi
+# Install only client packages on 157, no service configuration
+ssh_srv "${CLIENT_SERVER}" "
+    set -e
+    # Install beegfs-client only
+    if ! command -v beegfs-ctl &>/dev/null; then
+        sudo wget -q -O /etc/apt/sources.list.d/beegfs.list '${BEEGFS_REPO_URL}' || true
+        sudo wget -q -O /tmp/beegfs-gpg.asc '${BEEGFS_REPO_KEY}' || true
+        sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/beegfs.gpg /tmp/beegfs-gpg.asc 2>/dev/null || true
+        rm -f /tmp/beegfs-gpg.asc
+        sudo apt-get update -qq 2>/dev/null || true
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y beegfs-client beegfs-utils >/dev/null 2>&1 || true
+    fi
+    echo '  Client packages ready'
+"
 echo ""
 
-# --- Slaves (remote machines) ---
+# --- Slaves (150-152) ---
 echo "========================================"
-echo "Preparing slave servers (remote)"
+echo "Preparing slave servers (${SLAVE_SERVERS[*]})"
 echo "========================================"
 echo ""
 

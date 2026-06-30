@@ -14,13 +14,15 @@
 
 ## 环境概况
 
+**重要**: 157 只做客户端，不部署任何 BeeGFS 服务。
+
 - **集群拓扑**：
-  - Master (10.20.1.157): mgmtd + meta + 1 storage target (RAID0)
-  - Slaves (10.20.1.150-152): meta + 2 storage targets each (独立NVMe)
-- **Storage Targets**: 1 + 6 = 7 个
+  - Client (10.20.1.157): 仅 FUSE 客户端挂载点
+  - Slave1 (10.20.1.150): mgmtd + meta + 2 storage targets
+  - Slave2-3 (10.20.1.151-152): meta + 2 storage targets each
+- **Storage Targets**: 6 个
 - **存储**：
-  - Master: 2×7TB NVMe RAID0 → 14TB (1 target)
-  - Slaves: 各 2×7TB 独立 NVMe → 各 14TB (2 targets)
+  - Slaves: 各 2×7TB 独立 NVMe → 各 2 targets
 - **网络**：10 GbE 管理网络 (eno12399) + 100 GbE 高速网络 (enp139s0f0np0)
 - **CPU**：96-128 cores per node, Intel Xeon Platinum 8462Y+
 - **内存**：1TB per node
@@ -43,7 +45,7 @@ BeeGFS + NVMe + 100GbE 网络，预期性能应显著高于此基线。
 
 | 机器 | 磁盘配置 | Storage Targets |
 |------|----------|-----------------|
-| master | 2×7TB NVMe RAID0 | 1 |
-| slave1-3 | 各 2×7TB 独立 NVMe | 各 2 |
-
-Master 使用 RAID0 是因为运行 weka 系统，无法拆除。Slaves 已拆除 RAID0 用独立 NVMe，更符合 BeeGFS 最佳实践（每个物理盘一个 target）。
+| client (157) | 不动任何配置 | - |
+| slave1 | 2×7TB 独立 NVMe | 2 |
+| slave2 | 2×7TB 独立 NVMe | 2 |
+| slave3 | 2×7TB 独立 NVMe | 2 |

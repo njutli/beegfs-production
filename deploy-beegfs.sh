@@ -47,11 +47,26 @@ preflight() {
     echo "========================================"
     echo "BeeGFS Deployment Pre-flight Checks"
     echo "========================================"
-    echo "Master: ${MASTER_SERVER}"
-    echo "Slaves: ${SLAVE_SERVERS[*]}"
+    echo "Client (IO only): ${CLIENT_SERVER}"
+    echo "Slaves (services): ${SLAVE_SERVERS[*]}"
     echo ""
 
-    for ip in "${ALL_SERVERS[@]}"; do
+    # Check client server
+    echo -n "  ${CLIENT_SERVER} (client): "
+    if wait_ssh "${CLIENT_SERVER}" >/dev/null 2>&1; then
+        ssh_srv "${CLIENT_SERVER}" "
+            source /etc/os-release 2>/dev/null
+            echo -n \"\${PRETTY_NAME:-unknown} | \"
+            echo -n \"CPU: \$(nproc) | \"
+            echo \"Mem: \$(free -h | awk '/^Mem:/{print \$2}')\"
+        "
+    else
+        echo "UNREACHABLE"
+        return 1
+    fi
+
+    # Check slave servers
+    for ip in "${SLAVE_SERVERS[@]}"; do
         echo -n "  ${ip}: "
         if wait_ssh "${ip}" >/dev/null 2>&1; then
             ssh_srv "${ip}" "
@@ -82,11 +97,12 @@ preflight() {
 
 install_packages() {
     echo ""
-echo ">>> Step 1: Installing BeeGFS packages on all servers..."
+    echo ">>> Step 1: Installing BeeGFS packages on slaves..."
 
-for ip in "${ALL_SERVERS[@]}"; do
-    echo "  >>> ${ip}..."
-    ssh_srv "${ip}" "
+    # Only install on slaves, not on client (157)
+    for ip in "${SLAVE_SERVERS[@]}"; do
+        echo "  >>> ${ip}..."
+        ssh_srv "${ip}" "
         set -e
 
         # Add BeeGFS repository
@@ -127,14 +143,14 @@ done
 }
 
 # ============================================================
-# Step 2: Configure and start mgmtd on master
+# Step 2: Configure and start mgmtd on slave1 (10.20.1.150)
 # ============================================================
 
 deploy_mgmtmtd() {
     echo ""
-    echo ">>> Step 2: Deploying BeeGFS management service on master..."
+    echo ">>> Step 2: Deploying BeeGFS management service on ${BEEGFS_MGMTD_HOST}..."
 
-    ssh_srv "${MASTER_SERVER}" "
+    ssh_srv "${BEEGFS_MGMTD_HOST}" "
         set -e
 
         # Configure mgmtd
@@ -231,8 +247,8 @@ deploy_storage() {
 
     # --- Master: single storage target (RAID0) ---
     echo ""
-    echo "  >>> Deploying on master (${MASTER_SERVER})..."
-    ssh_srv "${MASTER_SERVER}" "
+    echo "  >>> Deploying on master (${CLIENT_SERVER})..."
+    ssh_srv "${CLIENT_SERVER}" "
         set -e
 
         # Configure storage (single path for RAID0)
@@ -362,7 +378,7 @@ deploy_client() {
     echo ""
     echo ">>> Step 5: Deploying BeeGFS client on master..."
 
-    ssh_srv "${MASTER_SERVER}" "
+    ssh_srv "${CLIENT_SERVER}" "
         set -e
 
         # Configure client
@@ -420,7 +436,7 @@ do_status() {
 
     # Show cluster info from master
     echo ">>> Cluster nodes:"
-    ssh_srv "${MASTER_SERVER}" "
+    ssh_srv "${CLIENT_SERVER}" "
         sudo beegfs-ctl --listnodes --nodetype=meta --mgmtd_node=${BEEGFS_MGMTD_HOST} 2>/dev/null || true
         echo ''
         sudo beegfs-ctl --listnodes --nodetype=storage --mgmtd_node=${BEEGFS_MGMTD_HOST} 2>/dev/null || true
@@ -430,8 +446,8 @@ do_status() {
 
     echo ""
     echo ">>> Client mount:"
-    if ssh_srv "${MASTER_SERVER}" "mountpoint -q ${BEEGFS_MOUNT_POINT}" 2>/dev/null; then
-        ssh_srv "${MASTER_SERVER}" "df -h ${BEEGFS_MOUNT_POINT}" 2>/dev/null
+    if ssh_srv "${CLIENT_SERVER}" "mountpoint -q ${BEEGFS_MOUNT_POINT}" 2>/dev/null; then
+        ssh_srv "${CLIENT_SERVER}" "df -h ${BEEGFS_MOUNT_POINT}" 2>/dev/null
     else
         echo "  Not mounted"
     fi
@@ -443,7 +459,7 @@ do_status() {
 
 do_mount() {
     echo ">>> Mounting BeeGFS on master..."
-    ssh_srv "${MASTER_SERVER}" "
+    ssh_srv "${CLIENT_SERVER}" "
         sudo mkdir -p ${BEEGFS_MOUNT_POINT}
         sudo systemctl restart beegfs-client
         sleep 3
@@ -460,7 +476,7 @@ do_mount() {
 
 do_unmount() {
     echo ">>> Unmounting BeeGFS on master..."
-    ssh_srv "${MASTER_SERVER}" "
+    ssh_srv "${CLIENT_SERVER}" "
         sudo systemctl stop beegfs-client 2>/dev/null || true
         sudo umount ${BEEGFS_MOUNT_POINT} 2>/dev/null || true
         echo '  Unmounted.'
@@ -476,11 +492,11 @@ do_test() {
     echo "BeeGFS Smoke Test"
     echo "========================================"
 
-    if ! ssh_srv "${MASTER_SERVER}" "mountpoint -q ${BEEGFS_MOUNT_POINT}" 2>/dev/null; then
+    if ! ssh_srv "${CLIENT_SERVER}" "mountpoint -q ${BEEGFS_MOUNT_POINT}" 2>/dev/null; then
         do_mount
     fi
 
-    ssh_srv "${MASTER_SERVER}" "
+    ssh_srv "${CLIENT_SERVER}" "
         echo ''
         echo '>>> Write test...'
         echo 'BeeGFS production test - '\$(date) > ${BEEGFS_MOUNT_POINT}/hello.txt

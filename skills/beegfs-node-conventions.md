@@ -7,17 +7,19 @@ description: Use for ALL tasks involving file operations, cluster operations, or
 
 ## 默认操作目标
 
-**所有文件相关的操作** 默认在 **主服务器（master）** 上进行，除非有特殊说明。
+**所有文件相关的操作** 默认在 **客户端服务器（157）** 上进行，除非有特殊说明。
 
 | 属性       | 值                                   |
 | ---------- | ------------------------------------ |
-| 主机名     | oneasia-c1-cpu-node10 (master)       |
+| 主机名     | oneasia-c1-cpu-node10 (client)       |
 | 内网 IP    | 10.20.1.157                          |
 | 公网 IP    | 203.156.3.194                        |
 | SSH 端口   | 19891                                |
 | 用户名     | sunrise                              |
 | 密码       | Sunrise@801                          |
 | 基础目录   | /home/sunrise/beegfs-production      |
+
+**注意**: 157 只做客户端，不部署任何服务。
 
 ### 从服务器
 
@@ -26,6 +28,13 @@ description: Use for ALL tasks involving file operations, cluster operations, or
 | slave1 | 10.20.1.150   | sunrise  | Sunrise@801   |
 | slave2 | 10.20.1.151   | sunrise  | Sunrise@801   |
 | slave3 | 10.20.1.152   | sunrise  | Sunrise@801   |
+
+### 架构说明
+
+- **Client (157)**: 只做 FUSE 客户端挂载点，下发 IO
+- **Slave1 (150)**: mgmtd + meta + 2 storage targets
+- **Slave2-3 (151-152)**: meta + 2 storage targets each
+- **总计**: 6 storage targets
 
 ## SSH 连接方式
 

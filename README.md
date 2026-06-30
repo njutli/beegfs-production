@@ -3,48 +3,45 @@
 ## 架构
 
 ```
-                         BeeGFS Client
-                    (FUSE mount, on master node)
-                              │
-              ┌───────────────┼───────────────┐
-              ▼               ▼               ▼
-         Management      Metadata        Storage
-         (mgmtd)         (meta)          (storage)
-        ┌────────┐    ┌────────┐    ┌──────────────┐
-        │ Master │    │ Master │    │ Master(1 tgt)│
-        │        │    │ + 3    │    │ + slaves(6 tg)│
-        │        │    │ slaves │    │ (独立NVMe)   │
-        └────────┘    └────────┘    └──────────────┘
-         10.20.1.157   157/150/151/152  1+6 targets
+                    BeeGFS Client (157)
+                 (FUSE mount, IO only)
+                         │
+           ┌─────────────┼─────────────┐
+           ▼             ▼             ▼
+      Management    Metadata      Storage
+      (mgmtd)       (meta)        (storage)
+      ┌────────┐  ┌────────┐   ┌──────────────┐
+      │ Slave1 │  │ Slave1 │   │ Slave1(2 tgt)│
+      │  150   │  │150/151 │   │ Slave2(2 tgt)│
+      │        │  │  152   │   │ Slave3(2 tgt)│
+      └────────┘  └────────┘   └──────────────┘
 ```
 
-| 机器 | 内网 IP | 角色 | 硬件 |
-|------|---------|------|------|
-| master | 10.20.1.157 | mgmtd + meta + **1 storage** + client | 96C/1TB RAM, 2×7TB NVMe RAID0 → 1 target, 1×894GB NVMe (空闲) |
-| slave1 | 10.20.1.150 | meta + **2 storage** | 128C/1TB RAM, 2×7TB 独立NVMe → 2 targets, 1×894GB NVMe (空闲) |
-| slave2 | 10.20.1.151 | meta + **2 storage** | 128C/1TB RAM, 2×7TB 独立NVMe → 2 targets, 1×894GB NVMe (空闲) |
-| slave3 | 10.20.1.152 | meta + **2 storage** | 128C/1TB RAM, 2×7TB 独立NVMe → 2 targets, 1×894GB NVMe (空闲) |
+**重要说明**: 157 只做客户端，不部署任何 BeeGFS 服务。
 
-**总计**: 1 + 6 = 7 个 storage targets
+| 机器 | 内网 IP | 角色 | 说明 |
+|------|---------|------|------|
+| client | 10.20.1.157 | **仅客户端** | 只挂载，不部署服务（运行其他业务） |
+| slave1 | 10.20.1.150 | mgmtd + meta + 2 storage | |
+| slave2 | 10.20.1.151 | meta + 2 storage | |
+| slave3 | 10.20.1.152 | meta + 2 storage | |
+
+**Storage Targets**: 6 个 (slaves 各 2 个)
 
 所有机器统一使用 **sunrise** 用户，特权操作用 `sudo`。
-主服务器通过公网 203.156.3.194:19891 SSH 跳转，从服务器通过内网 10.20.1.x 互访。
+客户端通过公网 203.156.3.194:19891 SSH 跳转，从服务器通过内网 10.20.1.x 互访。
 
 ## 磁盘规划
 
 | 机器 | 设备 | 容量 | 用途 | Target数 |
 |------|------|------|------|----------|
-| master | `/dev/md0` (2×NVMe RAID0) | 14TB | /data/beegfs/storage | 1 |
-| master | `/dev/nvme1n1` | 894GB | 空闲 (可选做metadata) | - |
-| slave1-3 | `/dev/nvme2n1` | 7TB | /data/disk1 | 1 |
-| slave1-3 | `/dev/nvme3n1` | 7TB | /data/disk2 | 1 |
-| slave1-3 | `/dev/nvme1n1` | 894GB | 空闲 (可选做metadata) | - |
-
-**设计说明**:
-- Master 因运行 weka 系统，RAID0 无法拆除，用单 target
-- Slaves 已拆除 RAID0，每台 2 个独立 NVMe，各部署 2 个 storage target
-- 总共 7 个 target，BeeGFS stripe count 设为 7
-- nvme1n1 (894GB) 空闲，可后续用于独立的 metadata target
+| client (157) | - | - | 不动任何配置 | - |
+| slave1 | `/dev/nvme2n1` | 7TB | /data/disk1 | 1 |
+| slave1 | `/dev/nvme3n1` | 7TB | /data/disk2 | 1 |
+| slave2 | `/dev/nvme2n1` | 7TB | /data/disk1 | 1 |
+| slave2 | `/dev/nvme3n1` | 7TB | /data/disk2 | 1 |
+| slave3 | `/dev/nvme2n1` | 7TB | /data/disk1 | 1 |
+| slave3 | `/dev/nvme3n1` | 7TB | /data/disk2 | 1 |
 
 ## 网络
 
@@ -56,10 +53,10 @@
 ## 快速开始
 
 ```bash
-# 1. 准备所有服务器 (如已有RAID0需先拆)
+# 1. 准备所有服务器 (client 只装客户端包，slaves 完整准备)
 bash prepare-all-servers.sh
 
-# 2. 部署 BeeGFS 集群
+# 2. 部署 BeeGFS 集群 (mgmtd/meta/storage 在 slaves，client 只mount)
 bash deploy-beegfs.sh
 
 # 3. 挂载并测试
