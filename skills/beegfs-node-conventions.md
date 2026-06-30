@@ -56,8 +56,24 @@ sshpass -p 'Sunrise@801' ssh -o StrictHostKeyChecking=no -p 19891 sunrise@203.15
 
 ## 磁盘环境
 
+### Master (10.20.1.157)
+
 | 设备         | 容量    | 用途                                   |
 | ------------ | ------- | -------------------------------------- |
+| `/dev/md0`   | 14TB    | 2×NVMe RAID0 → /data/beegfs/storage    |
+| `/dev/nvme1n1`| 894GB  | 空闲 (可选做metadata target)          |
+| `/dev/nvme0n1`| 894GB  | 系统盘                                 |
+
+### Slaves (10.20.1.150-152)
+
+| 设备         | 容量    | 用途                                   |
+| ------------ | ------- | -------------------------------------- |
+| `/dev/nvme2n1`| 7TB    | /data/disk1 (storage target 1)         |
+| `/dev/nvme3n1`| 7TB    | /data/disk2 (storage target 2)         |
+| `/dev/nvme1n1`| 894GB  | 空闲 (可选做metadata target)          |
+| `/dev/nvme0n1`| 894GB  | 系统盘                                 |
+
+**Storage Targets 总数**: 1 (master) + 6 (slaves) = 7
 | /dev/md0     | 14TB    | 2×NVMe RAID0，已挂载 /data，BeeGFS 数据 |
 | /dev/nvme1n1 | 894GB   | 空闲裸盘，可用于 metadata target        |
 | /dev/nvme0n1 | 894GB   | 系统盘（/ 和 /boot/efi）                |

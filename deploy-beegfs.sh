@@ -225,47 +225,131 @@ deploy_meta() {
 
 deploy_storage() {
     echo ""
-    echo ">>> Step 4: Deploying BeeGFS storage services on all servers..."
+    echo ">>> Step 4: Deploying BeeGFS storage services..."
+    echo "  Master: 1 storage target (RAID0)"
+    echo "  Slaves: 2 storage targets each (独立NVMe)"
 
-    for ip in "${ALL_SERVERS[@]}"; do
-        echo "  >>> ${ip}..."
+    # --- Master: single storage target (RAID0) ---
+    echo ""
+    echo "  >>> Deploying on master (${MASTER_SERVER})..."
+    ssh_srv "${MASTER_SERVER}" "
+        set -e
+
+        # Configure storage (single path for RAID0)
+        STORAGE_DIR='${BEEGFS_STORAGE_DIR_MASTER}'
+        sudo sed -i 's|^storeStorageDirectory.*|storeStorageDirectory='\${STORAGE_DIR}'|' \
+            /etc/beegfs/beegfs-storage.conf 2>/dev/null || true
+        sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost=${BEEGFS_MGMTD_HOST}|' \
+            /etc/beegfs/beegfs-storage.conf 2>/dev/null || true
+
+        # Ensure directory
+        sudo mkdir -p \${STORAGE_DIR}
+        sudo chown -R beegfs:beegfs /data/beegfs 2>/dev/null || true
+
+        # Stop if running
+        sudo systemctl stop beegfs-storage 2>/dev/null || true
+
+        # Setup storage service
+        if [ -x /opt/beegfs/sbin/beegfs-setup-storage ]; then
+            if [ ! -f \${STORAGE_DIR}/format ]; then
+                sudo /opt/beegfs/sbin/beegfs-setup-storage \
+                    -p \${STORAGE_DIR} \
+                    -s 157 \
+                    -m ${BEEGFS_MGMTD_HOST} || true
+            fi
+        fi
+
+        sudo systemctl enable beegfs-storage
+        sudo systemctl start beegfs-storage
+
+        sleep 2
+        if sudo systemctl is-active --quiet beegfs-storage; then
+            echo '  master storage: RUNNING'
+        else
+            echo '  master storage: FAILED'
+            sudo journalctl -u beegfs-storage --no-pager | tail -10
+        fi
+    "
+
+    # --- Slaves: two storage targets each ---
+    for ip in "${SLAVE_SERVERS[@]}"; do
+        echo ""
+        echo "  >>> Deploying on slave (${ip})... (2 targets)"
+
+        # Target 1: /data/disk1
         ssh_srv "${ip}" "
             set -e
 
-            # Configure storage
-            sudo sed -i 's|^storeStorageDirectory.*|storeStorageDirectory=${BEEGFS_STORAGE_DIR}|' \
+            STORAGE_DIR='${BEEGFS_STORAGE_DIR_SLAVE_1}'
+            sudo sed -i 's|^storeStorageDirectory.*|storeStorageDirectory='\${STORAGE_DIR}'|' \
                 /etc/beegfs/beegfs-storage.conf 2>/dev/null || true
             sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost=${BEEGFS_MGMTD_HOST}|' \
                 /etc/beegfs/beegfs-storage.conf 2>/dev/null || true
 
-            # Ensure directory
-            sudo mkdir -p ${BEEGFS_STORAGE_DIR}
-            sudo chown -R beegfs:beegfs ${BEEGFS_DATA_ROOT}
+            sudo mkdir -p \${STORAGE_DIR}
+            sudo chown -R beegfs:beegfs /data/disk1 2>/dev/null || true
+            sudo chown -R beegfs:beegfs /data/disk2 2>/dev/null || true
 
-            # Stop if running
             sudo systemctl stop beegfs-storage 2>/dev/null || true
 
-            # Setup storage service (only if not already initialized)
-            if [ -x /opt/beegfs/sbin/beegfs-setup-storage ]; then
-                if [ ! -f ${BEEGFS_STORAGE_DIR}/format ]; then
-                    sudo /opt/beegfs/sbin/beegfs-setup-storage \
-                        -p ${BEEGFS_STORAGE_DIR} \
-                        -s ${ip##*.} \
-                        -m ${BEEGFS_MGMTD_HOST} || true
-                fi
+            # First target: use node ID based on last byte of IP
+            if [ ! -f \${STORAGE_DIR}/format ]; then
+                sudo /opt/beegfs/sbin/beegfs-setup-storage \
+                    -p \${STORAGE_DIR} \
+                    -s \$(echo ${ip} | cut -d. -f4)01 \
+                    -m ${BEEGFS_MGMTD_HOST} || true
             fi
 
-            # Start storage
             sudo systemctl enable beegfs-storage
             sudo systemctl start beegfs-storage
+            sleep 3
+        "
 
-            sleep 2
-            if sudo systemctl is-active --quiet beegfs-storage; then
-                echo '  storage: RUNNING'
-            else
-                echo '  storage: FAILED'
-                sudo journalctl -u beegfs-storage --no-pager | tail -10
+        # Target 2: /data/disk2 (需要第二个 beegfs-storage 服务)
+        ssh_srv "${ip}" "
+            set -e
+
+            STORAGE_DIR='${BEEGFS_STORAGE_DIR_SLAVE_2}'
+
+            # Create a second storage service config
+            sudo cp /etc/beegfs/beegfs-storage.conf /etc/beegfs/beegfs-storage2.conf
+            sudo sed -i 's|beegfs-storage|beegfs-storage2|g' /etc/beegfs/beegfs-storage2.conf
+            sudo sed -i 's|^storeStorageDirectory.*|storeStorageDirectory='\${STORAGE_DIR}'|' /etc/beegfs/beegfs-storage2.conf
+            sudo sed -i 's|^sysMgmtdHost.*|sysMgmtdHost=${BEEGFS_MGMTD_HOST}|' /etc/beegfs/beegfs-storage2.conf
+
+            # Use a different node ID (last byte + 02)
+            NODE_ID=\$(echo ${ip} | cut -d. -f4)02
+
+            # Create systemd service for second target
+            sudo cp /lib/systemd/system/beegfs-storage.service /etc/systemd/system/beegfs-storage2.service
+            sudo sed -i 's|beegfs-storage.service|beegfs-storage2.service|g' /etc/systemd/system/beegfs-storage2.service
+            sudo sed -i 's|/etc/beegfs/beegfs-storage.conf|/etc/beegfs/beegfs-storage2.conf|g' /etc/systemd/system/beegfs-storage2.service
+            sudo systemctl daemon-reload
+
+            # Setup second target
+            if [ ! -f \${STORAGE_DIR}/format ]; then
+                sudo /opt/beegfs/sbin/beegfs-setup-storage \
+                    -p \${STORAGE_DIR} \
+                    -s \${NODE_ID} \
+                    -c /etc/beegfs/beegfs-storage2.conf \
+                    -m ${BEEGFS_MGMTD_HOST} || true
             fi
+
+            sudo systemctl enable beegfs-storage2
+            sudo systemctl start beegfs-storage2
+            sleep 2
+
+            if sudo systemctl is-active --quiet beegfs-storage2; then
+                echo '  slave '\${ip}' storage2: RUNNING'
+            else
+                echo '  slave '\${ip}' storage2: FAILED'
+            fi
+        "
+
+        # Verify both targets are running
+        ssh_srv "${ip}" "
+            echo '  storage targets:'
+            sudo systemctl is-active beegfs-storage beegfs-storage2 | sed 's/^/    /'
         "
     done
 }

@@ -14,8 +14,13 @@
 
 ## 环境概况
 
-- **集群拓扑**：1 master (mgmtd + meta + storage + client) + 3 slaves (meta + storage)
-- **存储**：每台 2×7TB NVMe RAID0 (/dev/md0 → /data)，14TB 可用
+- **集群拓扑**：
+  - Master (10.20.1.157): mgmtd + meta + 1 storage target (RAID0)
+  - Slaves (10.20.1.150-152): meta + 2 storage targets each (独立NVMe)
+- **Storage Targets**: 1 + 6 = 7 个
+- **存储**：
+  - Master: 2×7TB NVMe RAID0 → 14TB (1 target)
+  - Slaves: 各 2×7TB 独立 NVMe → 各 14TB (2 targets)
 - **网络**：10 GbE 管理网络 (eno12399) + 100 GbE 高速网络 (enp139s0f0np0)
 - **CPU**：96-128 cores per node, Intel Xeon Platinum 8462Y+
 - **内存**：1TB per node
@@ -32,4 +37,13 @@ JuiceFS + Ceph EC 4+2 (3 nodes, HDD-backed) 的 cold-r1 基线：
 - randwrite (bs=256K): 29.0 MiB/s
 - randrw (bs=256K): 15.1/14.7 MiB/s
 
-BeeGFS + NVMe RAID0 + 100GbE 网络，预期性能应显著高于此基线。
+BeeGFS + NVMe + 100GbE 网络，预期性能应显著高于此基线。
+
+## 磁盘配置说明
+
+| 机器 | 磁盘配置 | Storage Targets |
+|------|----------|-----------------|
+| master | 2×7TB NVMe RAID0 | 1 |
+| slave1-3 | 各 2×7TB 独立 NVMe | 各 2 |
+
+Master 使用 RAID0 是因为运行 weka 系统，无法拆除。Slaves 已拆除 RAID0 用独立 NVMe，更符合 BeeGFS 最佳实践（每个物理盘一个 target）。

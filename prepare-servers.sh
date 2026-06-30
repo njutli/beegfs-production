@@ -97,28 +97,45 @@ else
 fi
 
 # ============================================================
-# 5. Create BeeGFS directories on /data
+# 5. Create BeeGFS directories
 # ============================================================
 
 echo ""
-echo ">>> Creating BeeGFS directories on /data..."
+echo ">>> Creating BeeGFS directories..."
 
 BEEGFS_DATA_ROOT="/data/beegfs"
 
-if ! mountpoint -q /data 2>/dev/null; then
-    echo "  WARNING: /data is not a mount point. Creating there anyway."
+# Detect disk configuration
+if mountpoint -q /data 2>/dev/null; then
+    # Master: RAID0 mounted at /data
+    echo "  Detected: /data is mounted (RAID0 on master)"
+    mkdir -p "${BEEGFS_DATA_ROOT}/mgmtd"
+    mkdir -p "${BEEGFS_DATA_ROOT}/meta"
+    mkdir -p "${BEEGFS_DATA_ROOT}/storage"
+    chown -R "${SUDO_USER}:${SUDO_USER}" "${BEEGFS_DATA_ROOT}" 2>/dev/null || true
+    echo "  Created: ${BEEGFS_DATA_ROOT}/{mgmtd,meta,storage}"
+elif [ -d /data/disk1 ] && [ -d /data/disk2 ]; then
+    # Slaves: independent NVMe at /data/disk1 and /data/disk2
+    echo "  Detected: /data/disk1 and /data/disk2 (独立NVMe on slaves)"
+    mkdir -p "${BEEGFS_DATA_ROOT}/mgmtd"
+    mkdir -p "${BEEGFS_DATA_ROOT}/meta"
+    mkdir -p /data/disk1
+    mkdir -p /data/disk2
+    chown -R "${SUDO_USER}:${SUDO_USER}" /data/disk1 /data/disk2 2>/dev/null || true
+    chown -R "${SUDO_USER}:${SUDO_USER}" "${BEEGFS_DATA_ROOT}" 2>/dev/null || true
+    echo "  Created: ${BEEGFS_DATA_ROOT}/{mgmtd,meta} + /data/disk1 + /data/disk2"
+else
+    # Fallback: create standard directories
+    echo "  WARNING: Unknown disk configuration, using default layout"
+    mkdir -p "${BEEGFS_DATA_ROOT}/mgmtd"
+    mkdir -p "${BEEGFS_DATA_ROOT}/meta"
+    mkdir -p "${BEEGFS_DATA_ROOT}/storage"
+    chown -R "${SUDO_USER}:${SUDO_USER}" "${BEEGFS_DATA_ROOT}" 2>/dev/null || true
 fi
 
-mkdir -p "${BEEGFS_DATA_ROOT}/mgmtd"
-mkdir -p "${BEEGFS_DATA_ROOT}/meta"
-mkdir -p "${BEEGFS_DATA_ROOT}/storage"
-
-# Give ownership to the user who will run BeeGFS daemons
-chown -R "${SUDO_USER}:${SUDO_USER}" "${BEEGFS_DATA_ROOT}"
-
-echo "  Directories created:"
-ls -ld "${BEEGFS_DATA_ROOT}" "${BEEGFS_DATA_ROOT}/mgmtd" \
-       "${BEEGFS_DATA_ROOT}/meta" "${BEEGFS_DATA_ROOT}/storage"
+echo ""
+echo ">>> Directories created:"
+ls -ld /data/*/ 2>/dev/null || true
 
 # ============================================================
 # 6. Set hostname alias for BeeGFS (optional)

@@ -87,8 +87,8 @@ source tests/lib/beegfs-health-check.sh
 
 ## 注意事项
 
-1. BeeGFS 使用 RAID0 stripe pattern（无冗余），数据安全靠底层 RAID0
-2. layout 阶段会产生 128G 数据，确保 /data 有足够空间
+1. **Storage Targets**: 7 个 (master 1个 RAID0 + slaves 6个 独立NVMe)
+2. layout 阶段会产生 128G 数据，确保各 storage target 有足够空间
 3. 随机测试 128 jobs × 128 iodepth = 高并发，可能触发 fio 残留问题（参考 TESTING-GUIDE.md）
-4. 测试前确认所有 BeeGFS 服务正常运行
-5. 不要在 /dev/md0 空间不足时跑 layout（128G）
+4. 测试前确认所有 BeeGFS 服务正常运行 (`beegfs-ctl --listtargets`)
+5. Master 使用 RAID0，单 target；Slaves 各 2 个独立 target，并行度更高
