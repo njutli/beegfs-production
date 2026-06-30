@@ -190,9 +190,10 @@ deploy_mgmtmtd() {
 
 deploy_meta() {
     echo ""
-    echo ">>> Step 3: Deploying BeeGFS metadata services on all servers..."
+    echo ">>> Step 3: Deploying BeeGFS metadata services on slaves..."
 
-    for ip in "${ALL_SERVERS[@]}"; do
+    # Only deploy metadata on slaves, not on client
+    for ip in "${SLAVE_SERVERS[@]}"; do
         echo "  >>> ${ip}..."
         ssh_srv "${ip}" "
             set -e
