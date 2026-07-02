@@ -108,25 +108,32 @@
 
 ## 快速开始
 
+> 从 WSL 通过跳板机执行。SSH 路径：WSL → HK ECS(190.92.233.189) → 泰国 client(203.156.3.194:19891) → 内网 slaves
+
 ```bash
-# 1. 准备所有服务器
+# 0. 前置：首次需建立 WSL → HK ECS 跳板机的免密登录
+sshpass -p 'Sunrise@801' ssh-copy-id -o StrictHostKeyChecking=no root@190.92.233.189
+
+# 1. SSH 密钥分发（分发到 client 157 和所有 slave）
+bash setup-ssh-keys.sh
+
+# 2. 准备所有服务器
 bash prepare-all-servers.sh
 
-# 2. 部署 BeeGFS 集群 (含镜像)
+# 3. 部署 BeeGFS 集群 (含镜像)
 bash deploy-beegfs.sh deploy
 
-# 3. 挂载并测试
+# 4. 挂载并测试
 bash deploy-beegfs.sh mount
 bash deploy-beegfs.sh test
 
-# 4. 调优 (per 官方文档)
-# 在每台 slave 上执行:
-sudo bash tune-servers.sh
+# 5. 调优 (per 官方文档)
+bash deploy-beegfs.sh test
 
-# 5. 基本读写测试
+# 6. 基本读写测试
 bash tests/bench-basic.sh
 
-# 6. 全量性能测试
+# 7. 全量性能测试
 bash tests/bench-full.sh cold-r1 cold
 ```
 
