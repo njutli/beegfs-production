@@ -564,27 +564,22 @@ do_status() {
 
 do_mount() {
     echo ">>> Mounting BeeGFS on ${CLIENT_SERVER}..."
-    _run "${CLIENT_SERVER}" "
-        sudo systemctl restart beegfs-client
-        sleep 3
-        if mountpoint -q ${BEEGFS_MOUNT_POINT}; then
-            echo '  Mounted!'
-            df -h ${BEEGFS_MOUNT_POINT}
-        else
-            echo '  ERROR: mount failed'
-            sudo journalctl -u beegfs-client --no-pager | tail -10
-            exit 1
-        fi
-    "
+    _run "${CLIENT_SERVER}" "\
+sudo systemctl restart beegfs-client && \
+sleep 3 && \
+mountpoint -q ${BEEGFS_MOUNT_POINT} && \
+echo '  Mounted!' || \
+echo '  ERROR: mount failed'"
 }
 
 do_unmount() {
     echo ">>> Unmounting BeeGFS on ${CLIENT_SERVER}..."
-    _run "${CLIENT_SERVER}" "
-        sudo systemctl stop beegfs-client 2>/dev/null || true
-        sudo umount ${BEEGFS_MOUNT_POINT} 2>/dev/null || true
-        echo '  Unmounted.'
-    "
+    _run "${CLIENT_SERVER}" "\
+sudo systemctl stop beegfs-client && \
+sleep 2 && \
+mountpoint -q ${BEEGFS_MOUNT_POINT} && \
+echo '  WARNING: still mounted' || \
+echo '  Unmounted.'"
 }
 
 # ============================================================
@@ -600,29 +595,23 @@ do_test() {
         do_mount
     fi
 
-    _run "${CLIENT_SERVER}" "
-        echo ''
-        echo '>>> Write test...'
-        echo 'BeeGFS production test - '\$(date) > ${BEEGFS_MOUNT_POINT}/hello.txt
-        dd if=/dev/urandom of=${BEEGFS_MOUNT_POINT}/random.bin bs=1M count=100 2>&1 | tail -1
-
-        echo ''
-        echo '>>> Read verification...'
-        grep -q 'production test' ${BEEGFS_MOUNT_POINT}/hello.txt && echo '  PASS: Text file' || echo '  FAIL: Text file'
-        SIZE=\$(stat -c%s ${BEEGFS_MOUNT_POINT}/random.bin)
-        [ \"\${SIZE}\" -eq 104857600 ] && echo '  PASS: Binary (100MB)' || echo '  FAIL: Binary size=\${SIZE}'
-
-        echo ''
-        echo '>>> Storage info:'
-        if command -v beegfs &>/dev/null; then
-            beegfs entry info ${BEEGFS_MOUNT_POINT}/ 2>/dev/null || true
-        fi
-
-        echo ''
-        echo '>>> Cleanup...'
-        rm -f ${BEEGFS_MOUNT_POINT}/hello.txt ${BEEGFS_MOUNT_POINT}/random.bin
-        echo '  Done.'
-    "
+    _run "${CLIENT_SERVER}" "\
+echo '' && \
+echo '>>> Write test...' && \
+echo 'BeeGFS production test - '\$(date) > ${BEEGFS_MOUNT_POINT}/hello.txt && \
+dd if=/dev/urandom of=${BEEGFS_MOUNT_POINT}/random.bin bs=1M count=100 2>&1 | tail -1 && \
+echo '' && \
+echo '>>> Read verification...' && \
+grep -q 'production test' ${BEEGFS_MOUNT_POINT}/hello.txt && echo '  PASS: Text file' || echo '  FAIL: Text file' && \
+SIZE=\$(stat -c%s ${BEEGFS_MOUNT_POINT}/random.bin) && \
+[ \"\${SIZE}\" -eq 104857600 ] && echo '  PASS: Binary (100MB)' || echo '  FAIL: Binary size='\${SIZE} && \
+echo '' && \
+echo '>>> Storage info:' && \
+if command -v beegfs &>/dev/null; then beegfs entry info ${BEEGFS_MOUNT_POINT}/ 2>/dev/null || true; fi && \
+echo '' && \
+echo '>>> Cleanup...' && \
+rm -f ${BEEGFS_MOUNT_POINT}/hello.txt ${BEEGFS_MOUNT_POINT}/random.bin && \
+echo '  Done.'"
 }
 
 # ============================================================
