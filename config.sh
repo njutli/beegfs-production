@@ -46,7 +46,7 @@ ALL_SERVERS=( "${CLIENT_SERVER}" "${SLAVE_SERVERS[@]}" )
 BEEGFS_MAJOR_VERSION="8"
 
 # --- BeeGFS Service Hosts ---
-BEEGFS_MGMTD_HOST="10.20.1.150"
+BEEGFS_MGMTD_HOST="10.20.1.157"
 BEEGFS_MGMTD_PORT="8008"
 BEEGFS_META_PORT="8005"
 BEEGFS_STORAGE_PORT="8003"
@@ -72,6 +72,42 @@ SSH_USER="sunrise"
 SSH_PASSWORD="Sunrise@801"
 SSH_KEY="${HOME}/.ssh/id_ed25519"
 SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=10"
+
+# --- Jump Hosts ---
+# HK ECS jump host (WSL → HK → TH)
+HK_ECS="190.92.233.189"
+HK_ECS_USER="root"
+HK_ECS_PASSWORD="Sunrise@801"
+
+# SSH to client (157) via HK ECS jump
+# Usage: ssh_to_client <command...>
+ssh_to_client() {
+    sshpass -p "${HK_ECS_PASSWORD}" ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
+        "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \"\$@\""
+}
+
+# SSH to slave via HK ECS → client(157) jump
+# Usage: ssh_to_slave <ip> <command...>
+ssh_to_slave() {
+    local ip=$1; shift
+    sshpass -p "${HK_ECS_PASSWORD}" ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
+        "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \
+            'ssh ${SSH_OPTS} '\''${SSH_USER}@${ip}'\'' \"\$@\"'"
+}
+
+# Copy file to remote server via jump
+# Usage: scp_to_server <src_local> <dest_ip> <dest_path>
+# 自动判断目标: CLIENT_SERVER 走一级跳板，slave 走两级跳板
+scp_to_server() {
+    local src=$1 ip=$2 dest=$3
+    local base64_src
+    base64_src=$(base64 -w0 "$src")
+    if [ "$ip" = "${CLIENT_SERVER}" ]; then
+        ssh_to_client "cat > '$dest'" < "$src"
+    else
+        ssh_to_slave "$ip" "cat > '$dest'" < "$src"
+    fi
+}
 
 # --- Network ---
 # BeeGFS connInterfacesFile — which NICs to use for data transfer.

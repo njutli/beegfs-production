@@ -107,13 +107,24 @@ sysctl --system >/dev/null 2>&1
 echo "  Done."
 
 # ============================================================
-# 4. IO Scheduler — deadline (per official docs, NOT none)
+# 4. IO Scheduler — none for NVMe (kernel default), deadline for SSD
+#    BeeGFS官方建议 deadline，但 NVMe 设备内核强制使用 none
+#    对 NVMe 写 none 不影响实际效果，因为 NVMe 不需要 IO 调度
 # ============================================================
 
 echo ""
-echo ">>> Setting IO scheduler to deadline (per official docs)..."
+echo ">>> Setting IO scheduler to deadline for non-NVMe devices..."
+echo "    NVMe devices use 'none' (kernel default, NVMe has no IO scheduler)"
 
-for disk in /sys/block/nvme*/queue/scheduler /sys/block/sd*/queue/scheduler; do
+for disk in /sys/block/nvme*/queue/scheduler; do
+    if [ -f "${disk}" ]; then
+        # NVMe kernel doesn't support changing scheduler; verify it's 'none'
+        current=$(cat "${disk}" 2>/dev/null || echo "")
+        echo "  ${disk}: ${current} (NVMe, kept as-is)"
+    fi
+done
+
+for disk in /sys/block/sd*/queue/scheduler; do
     if [ -f "${disk}" ]; then
         echo "deadline" > "${disk}" 2>/dev/null || true
     fi
@@ -178,6 +189,13 @@ echo 262144 > /proc/sys/vm/min_free_kbytes
 echo 1 > /proc/sys/vm/zone_reclaim_mode
 
 # IO scheduler and queue settings for storage devices
+# NVMe: kernel forces 'none', skip setting scheduler
+for dev in /sys/block/sd*; do
+    [ -d "${dev}" ] || continue
+    devname=$(basename "${dev}")
+    [ "${devname}" = "sdX" ] && continue
+    echo deadline > "${dev}/queue/scheduler" 2>/dev/null || true
+done
 for dev in /sys/block/nvme* /sys/block/sd*; do
     [ -d "${dev}" ] || continue
     devname=$(basename "${dev}")

@@ -22,9 +22,13 @@ LIMIT_LATENCY="100ms"
 # 所有需要限速的节点
 LIMIT_SERVERS=( "${CLIENT_SERVER}" "${SLAVE_SERVERS[@]}" )
 
-ssh_srv() {
+_run_ssh() {
     local ip=$1; shift
-    ssh ${SSH_OPTS} -i "${SSH_KEY}" "${SSH_USER}@${ip}" "$@"
+    if [ "$ip" = "${CLIENT_SERVER}" ]; then
+        ssh_to_client "$@"
+    else
+        ssh_to_slave "$ip" "$@"
+    fi
 }
 
 apply_limit() {
@@ -34,7 +38,7 @@ apply_limit() {
 
     for ip in "${LIMIT_SERVERS[@]}"; do
         echo ">>> ${ip}..."
-        ssh_srv "${ip}" "
+        _run_ssh "${ip}" "
             echo 'Sunrise@801' | sudo -S bash -c '
                 # Remove existing qdisc if any
                 tc qdisc del dev ${TARGET_IFACE} root 2>/dev/null || true
@@ -66,7 +70,7 @@ remove_limit() {
 
     for ip in "${LIMIT_SERVERS[@]}"; do
         echo ">>> ${ip}..."
-        ssh_srv "${ip}" "
+        _run_ssh "${ip}" "
             echo 'Sunrise@801' | sudo -S bash -c '
                 tc qdisc del dev ${TARGET_IFACE} root 2>/dev/null || true
                 echo \"  Removed limit from ${TARGET_IFACE}\"
@@ -87,8 +91,8 @@ show_status() {
     echo "========================================"
 
     for ip in "${LIMIT_SERVERS[@]}"; do
-        echo ">>> ${ip} ($(ssh_srv "${ip}" 'hostname' 2>/dev/null)):"
-        ssh_srv "${ip}" "
+        echo ">>> ${ip} ($(_run_ssh "${ip}" 'hostname' 2>/dev/null)):"
+        _run_ssh "${ip}" "
             echo 'Sunrise@801' | sudo -S tc qdisc show dev ${TARGET_IFACE} 2>/dev/null
         " 2>/dev/null
         echo ""

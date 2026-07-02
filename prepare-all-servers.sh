@@ -4,8 +4,10 @@ set -euo pipefail
 # ============================================================
 # Prepare All Servers
 #
-# Client (157): 只准备客户端环境，不部署服务
-# Slaves (150-152): 准备完整的 BeeGFS 服务环境
+# Client (157):   mgmtd + meta + client 环境
+# Slaves (150-152): BeeGFS 服务环境 (meta + storage)
+#
+# 从 WSL 通过 HK ECS 跳板执行。
 #
 # Usage: bash prepare-all-servers.sh
 # ============================================================
@@ -13,45 +15,40 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
-ssh_srv() {
-    local ip=$1; shift
-    ssh ${SSH_OPTS} -i "${SSH_KEY}" "${SSH_USER}@${ip}" "$@"
-}
-
-scp_srv() {
-    local ip=$1 local_file=$2 remote_path=$3
-    scp ${SSH_OPTS} -i "${SSH_KEY}" "${local_file}" "${SSH_USER}@${ip}:${remote_path}"
-}
-
 wait_ssh() {
     local ip=$1 max=60
     echo -n ">>> Waiting for SSH on ${ip}..."
-    for i in $(seq 1 ${max}); do
-        if ssh_srv "${ip}" "echo ok" 2>/dev/null; then echo " ready!"; return 0; fi
-        sleep 2; echo -n "."
-    done
+    if [ "$ip" = "${CLIENT_SERVER}" ]; then
+        for i in $(seq 1 ${max}); do
+            if ssh_to_client "echo ok" 2>/dev/null; then echo " ready!"; return 0; fi
+            sleep 2; echo -n "."
+        done
+    else
+        for i in $(seq 1 ${max}); do
+            if ssh_to_slave "$ip" "echo ok" 2>/dev/null; then echo " ready!"; return 0; fi
+            sleep 2; echo -n "."
+        done
+    fi
     echo " timeout!"; return 1
 }
 
-# --- Client server (157) - only prepare client packages ---
+# --- Client server (157) - prepare mgmtd + meta + client ---
 echo "========================================"
 echo "Preparing client server (${CLIENT_SERVER})"
 echo "========================================"
 echo ""
 
-# Install only client packages on 157, no service configuration
-ssh_srv "${CLIENT_SERVER}" "
+ssh_to_client "
     set -e
-    # Install beegfs-client only
     if ! command -v beegfs-ctl &>/dev/null; then
-        sudo wget -q -O /etc/apt/sources.list.d/beegfs.list '${BEEGFS_REPO_URL}' || true
-        sudo wget -q -O /tmp/beegfs-gpg.asc '${BEEGFS_REPO_KEY}' || true
-        sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/beegfs.gpg /tmp/beegfs-gpg.asc 2>/dev/null || true
+        sudo wget -q -O /etc/apt/sources.list.d/beegfs.list '${BEEGFS_REPO_URL}'
+        sudo wget -q -O /tmp/beegfs-gpg.asc '${BEEGFS_REPO_KEY}'
+        sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/beegfs.gpg /tmp/beegfs-gpg.asc 2>/dev/null
         rm -f /tmp/beegfs-gpg.asc
-        sudo apt-get update -qq 2>/dev/null || true
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y beegfs-client beegfs-utils >/dev/null 2>&1 || true
+        sudo apt-get update -qq 2>/dev/null
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y beegfs-mgmtd beegfs-meta beegfs-client beegfs-utils >/dev/null 2>&1
     fi
-    echo '  Client packages ready'
+    echo '  Client (mgmtd+meta+client) packages ready'
 "
 echo ""
 
@@ -65,8 +62,9 @@ for ip in "${SLAVE_SERVERS[@]}"; do
     echo ">>> ${ip}"
     wait_ssh "${ip}" || { echo "ERROR: Cannot SSH to ${ip}."; exit 1; }
 
-    scp_srv "${ip}" "${SCRIPT_DIR}/prepare-servers.sh" /tmp/prepare-servers.sh
-    ssh_srv "${ip}" "sudo bash /tmp/prepare-servers.sh"
+    # Copy prepare-servers.sh via client jump
+    ssh_to_client "cat > /tmp/prepare-servers.sh" < "${SCRIPT_DIR}/prepare-servers.sh"
+    ssh_to_slave "${ip}" "sudo bash /tmp/prepare-servers.sh"
     echo ""
 done
 
