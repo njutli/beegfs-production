@@ -80,19 +80,26 @@ HK_ECS_USER="root"
 HK_ECS_PASSWORD="Sunrise@801"
 
 # SSH to client (157) via HK ECS jump
-# Usage: ssh_to_client <command...>
+# Usage: ssh_to_client <command_string>
+# The command is base64-encoded to avoid quoting issues with nested sshpass/ssh.
 ssh_to_client() {
+    local cmd="$1"
+    local encoded
+    encoded=$(echo -n "$cmd" | base64 -w0)
     sshpass -p "${HK_ECS_PASSWORD}" ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
-        "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \"\$@\""
+        "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' 'echo ${encoded} | base64 -d | bash'"
 }
 
 # SSH to slave via HK ECS → client(157) jump
-# Usage: ssh_to_slave <ip> <command...>
+# Usage: ssh_to_slave <ip> <command_string>
 ssh_to_slave() {
-    local ip=$1; shift
+    local ip=$1
+    local cmd="$2"
+    local encoded
+    encoded=$(echo -n "$cmd" | base64 -w0)
     sshpass -p "${HK_ECS_PASSWORD}" ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
         "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \
-            sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T ${SSH_USER}@${ip} \"\$@\""
+            sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T ${SSH_USER}@${ip} 'echo ${encoded} | base64 -d | bash'"
 }
 
 # Copy file to remote server via jump
