@@ -128,7 +128,10 @@ bash deploy-beegfs.sh mount
 bash deploy-beegfs.sh test
 
 # 5. 调优 (per 官方文档)
-bash deploy-beegfs.sh test
+# 需要将 tune-servers.sh 传到每台 slave 上以 root 执行。
+# 例如 slave 150:
+#   ssh_to_slave 10.20.1.150 "cat > /tmp/tune-servers.sh" < tune-servers.sh
+#   ssh_to_slave 10.20.1.150 "sudo bash /tmp/tune-servers.sh"
 
 # 6. 基本读写测试
 bash tests/bench-basic.sh
