@@ -83,7 +83,7 @@ HK_ECS_PASSWORD="Sunrise@801"
 # Usage: ssh_to_client <command...>
 ssh_to_client() {
     sshpass -p "${HK_ECS_PASSWORD}" ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
-        "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \"\$@\""
+        "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \"\$@\""
 }
 
 # SSH to slave via HK ECS → client(157) jump
@@ -91,8 +91,8 @@ ssh_to_client() {
 ssh_to_slave() {
     local ip=$1; shift
     sshpass -p "${HK_ECS_PASSWORD}" ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
-        "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \
-            ssh ${SSH_OPTS} ${SSH_USER}@${ip} \"\$@\""
+        "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \
+            sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T ${SSH_USER}@${ip} \"\$@\""
 }
 
 # Copy file to remote server via jump
