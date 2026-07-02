@@ -24,21 +24,10 @@ source "${SCRIPT_DIR}/config.sh"
 
 # --- Helpers ---
 
-# Run a command on a remote server, stripping motd from stdout.
-# motd is sent to stderr with sshpass + ssh -T; stderr is discarded,
-# only the actual command output (stdout) is returned.
+# Run a command on a remote server.
+# motd is printed on every connection; the actual command output
+# comes after it. Both stdout and stderr are returned as-is.
 _run() {
-    local ip=$1; shift
-    if [ "$ip" = "${CLIENT_SERVER}" ]; then
-        ssh_to_client "$@" 2>/dev/null
-    else
-        ssh_to_slave "$ip" "$@" 2>/dev/null
-    fi
-}
-
-# Run a command on a remote server and return BOTH stdout and stderr
-# (for debugging, when we need to see error messages).
-_run_verbose() {
     local ip=$1; shift
     if [ "$ip" = "${CLIENT_SERVER}" ]; then
         ssh_to_client "$@"
@@ -527,7 +516,7 @@ do_status() {
     echo ""
 
     for ip in "${ALL_SERVERS[@]}"; do
-        echo ">>> ${ip} ($(_run "${ip}" 'hostname' 2>/dev/null))"
+        echo ">>> ${ip} ($(_run "${ip}" 'hostname'))"
         _run "${ip}" "
             for svc in beegfs-mgmtd beegfs-meta beegfs-storage beegfs-storage2 beegfs-client; do
                 echo -n '  '\${svc}': '
@@ -562,8 +551,8 @@ do_status() {
 
     echo ""
     echo ">>> Client mount:"
-    if _run "${CLIENT_SERVER}" "mountpoint -q ${BEEGFS_MOUNT_POINT}" 2>/dev/null; then
-        _run "${CLIENT_SERVER}" "df -h ${BEEGFS_MOUNT_POINT}" 2>/dev/null
+    if _run "${CLIENT_SERVER}" "mountpoint -q ${BEEGFS_MOUNT_POINT}"; then
+        _run "${CLIENT_SERVER}" "df -h ${BEEGFS_MOUNT_POINT}"
     else
         echo "  Not mounted"
     fi
@@ -607,7 +596,7 @@ do_test() {
     echo "BeeGFS Smoke Test"
     echo "========================================"
 
-    if ! _run "${CLIENT_SERVER}" "mountpoint -q ${BEEGFS_MOUNT_POINT}" 2>/dev/null; then
+    if ! _run "${CLIENT_SERVER}" "mountpoint -q ${BEEGFS_MOUNT_POINT}"; then
         do_mount
     fi
 

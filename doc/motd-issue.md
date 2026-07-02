@@ -13,7 +13,7 @@ Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 5.15.0-170-generic x86_64)
 hello
 ```
 
-本应得到 `hello`，但前面有 30+ 行 motd。脚本如果用 `grep hello` 是可以的，但从人眼阅读或 `$(...)` 捕获结果时，motd 会严重干扰。
+本应得到 `hello`，但前面有 30+ 行 motd。脚本如果用 `grep hello` 是可以的，但从人眼阅读或自动分析时，motd 会严重干扰。
 
 ## 复现条件
 
@@ -30,7 +30,7 @@ hello
 source config.sh && ssh_to_client "echo HELLO_WORLD"
 ```
 
-输出中 `HELLO_WORLD` 被淹没在 motd 中，无法直接通过 `$(...)` 捕获。
+输出中 `HELLO_WORLD` 被淹没在 motd 中。
 
 ## 根因分析
 
@@ -40,63 +40,32 @@ sshpass 连接的 SSH 会话：
 
 虽然用了 `-T`（禁用 PTY 分配），但 sshpass 自身的工作机制导致第一层的 motd 被打印。
 
-## 解决方案
+## 当前方案
 
-### 方案 A：丢弃 stderr（已采用）
+不丢弃 stderr，保留完整输出。脚本（`_run` 函数）和 AI 在分析结果时自动识别并忽略 motd 内容，只关注实际命令的输出来判断成功或失败。这样既避免了静默错误，也能获取到真实的命令结果。
 
-将 `_run` 函数的 stderr 重定向到 `/dev/null`：
+## 判断规则
 
-```bash
-_run() {
-    local ip=$1; shift
-    if [ "$ip" = "CLIENT_SERVER" ]; then
-        ssh_to_client "$@" 2>/dev/null
-    else
-        ssh_to_slave "$ip" "$@" 2>/dev/null
-    fi
-}
-```
+执行远程命令时，按以下方式提取有效结果：
 
-**代价**：真正的错误信息（如 `Permission denied`）也会被丢弃。需要在关键检查点使用 `_run_verbose`（保留 stderr）。
+1. motd 固定内容特征：
+   - `Welcome to Ubuntu ...`
+   - `* Documentation: ...`
+   - `System information as of ...`
+   - `System load: ...`
+   - `*** System restart required ***`
+   - 以 `*` 开头的行
+   - `New release ...` / `Run 'do-release-upgrade' ...`
+   - `Expanded Security Maintenance ...`
+   - `bash: warning: setlocale: ...`
 
-### 方案 B：`test -t 0` 包装
-
-在远程命令前加 `test -t 0 && ...` 跳过 motd 相关的 shell 初始化：
-
-```bash
-ssh_to_client "test -t 0 && echo HELLO || echo HELLO"
-```
-
-### 方案 C：禁用远程 motd
-
-在被控服务器上通过 `touch ~/.hushlogin` 抑制 MOTD 显示：
-
-```bash
-ssh_to_client "touch ~/.hushlogin"
-# 对 slave 同理
-```
-
-但会影响到人工 SSH 登录时的信息展示。
-
-## 当前工程采用的方案
-
-`deploy-beegfs.sh` 和 `prepare-all-servers.sh` 中的 `_run` 函数使用方案 A（丢弃 stderr），同时提供 `_run_verbose` 函数用于调试时获取完整输出。
-
-所有脚本的远程调用已改为：
-
-- 常规命令：`_run <ip> "command"`（stderr 丢弃，只取 stdout）
-- 检查/调试：直接用手动 SSH 命令或脚本中的特定 echo 输出
-- client 157 上的 motd 已通过 `touch ~/.hushlogin` 抑制
-- slave 的 motd 因是交互式登录也会打印，但通过区分 stdout/stderr 后不影响关键判断
+2. 过滤这些行后，剩余内容即为实际命令输出。
+3. 命令输出中的 `active` / `inactive` / `failed` / 行数统计 / 错误信息等关键词用于判断结果。
 
 ## 测试验证
 
-执行以下命令验证 motd 是否已被抑制：
-
 ```bash
 source config.sh
-# 应该只输出 "OK"，没有 motd
-ssh_to_client "echo OK" 2>/dev/null
-# 或用新版 _run（deploy-beegfs.sh 中使用）
-# 如果仍有 motd，说明问题未完全解决
+ssh_to_client "echo OK"
+# 输出将包含 motd + "OK"，需要过滤后判断
 ```
