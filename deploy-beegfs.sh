@@ -36,6 +36,17 @@ _run() {
     fi
 }
 
+# Run a command on a remote server and return BOTH stdout and stderr
+# (for debugging, when we need to see error messages).
+_run_verbose() {
+    local ip=$1; shift
+    if [ "$ip" = "${CLIENT_SERVER}" ]; then
+        ssh_to_client "$@"
+    else
+        ssh_to_slave "$ip" "$@"
+    fi
+}
+
 wait_ssh() {
     local ip=$1 max=60
     echo -n ">>> Waiting for SSH on ${ip}..."
