@@ -7,9 +7,9 @@ set -euo pipefail
 # 从 WSL 通过 HK ECS 跳板分发 SSH 密钥到所有服务器。
 #
 # 流程:
-#   1. 本地生成密钥
-#   2. 通过 HK ECS 跳板 ssh-copy-id 到 client (157)
-#   3. 在 client 上生成密钥，再分发给 slaves (150-152)
+#   1. WSL 密钥 -> HK ECS 跳板机
+#   2. HK ECS -> client (157)
+#   3. client (157) 上生成密钥 -> slaves (150-152)
 #
 # Usage: bash setup-ssh-keys.sh
 # ============================================================
@@ -34,68 +34,91 @@ else
     echo ">>> Generating ED25519 key pair locally..."
     ssh-keygen -t ed25519 -f "${LOCAL_KEY}" -N "" -C "beegfs-deploy-$(date +%Y%m%d)"
 fi
-
 echo ""
 
 # ============================================================
-# Step 2: Copy local key to client (157) via HK ECS
+# Step 2: Copy local key to HK ECS (if not already done)
 # ============================================================
 
 echo "========================================"
-echo ">>> Step 2: Copying key to client ${CLIENT_SERVER} (${CLIENT_EXT}:${CLIENT_PORT})"
+echo ">>> Step 2: Copying key to HK ECS jump (${HK_ECS})"
 echo "========================================"
 
-# Step 2a: Copy local public key to HK ECS
-sshpass -p "${HK_ECS_PASSWORD}" ssh-copy-id -i "${LOCAL_KEY}.pub" \
-    ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" || {
-    echo "ERROR: ssh-copy-id to HK ECS failed."
-    exit 1
-}
-
-# Step 2b: Copy HK ECS → client (157)
-sshpass -p "${HK_ECS_PASSWORD}" ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
-    "sshpass -p '${SSH_PASSWORD}' ssh-copy-id -i '${SSH_KEY}.pub' \
-        ${SSH_OPTS} -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}'" || {
-    echo "ERROR: ssh-copy-id to client failed."
-    exit 1
-}
-echo "   Key installed on client ${CLIENT_SERVER}."
+if ssh -o BatchMode=yes -o ConnectTimeout=5 "${HK_ECS_USER}@${HK_ECS}" "echo ok" 2>/dev/null; then
+    echo "  [skip] Already configured."
+else
+    sshpass -p "${HK_ECS_PASSWORD}" ssh-copy-id -f -i "${LOCAL_KEY}.pub" \
+        ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}"
+    echo "  Key installed on HK ECS."
+fi
 echo ""
 
 # ============================================================
-# Step 3: On client, generate key (if missing) and copy to slaves
+# Step 3: Copy local key to client (157) via HK ECS
 # ============================================================
+
+echo "========================================"
+echo ">>> Step 3: Copying key to client ${CLIENT_SERVER} (${CLIENT_EXT}:${CLIENT_PORT})"
+echo "========================================"
+
+# Check if already configured
+if ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
+    "ssh -o BatchMode=yes -o ConnectTimeout=5 -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' 'echo ok'" 2>/dev/null; then
+    echo "  [skip] Already configured."
+else
+    # Copy local pub key to HK ECS, then ssh-copy-id to client
+    ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" "cat > /tmp/beegfs-client-pubkey.pub" < "${LOCAL_KEY}.pub"
+    ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
+        "sshpass -p '${SSH_PASSWORD}' ssh-copy-id -f -i /tmp/beegfs-client-pubkey.pub \
+            ${SSH_OPTS} -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' && \
+         rm -f /tmp/beegfs-client-pubkey.pub"
+    echo "  Key installed on client ${CLIENT_SERVER}."
+fi
+echo ""
+
+# ============================================================
+# Step 4: On client, generate key and copy to slaves
+# ============================================================
+
+echo "========================================"
+echo ">>> Step 4: Setup keys from client to slaves"
+echo "========================================"
 
 for ip in "${SLAVE_SERVERS[@]}"; do
-    echo "========================================"
-    echo ">>> Step 3: Copying key to ${SSH_USER}@${ip} (via client jump)"
-    echo "========================================"
-    ssh_to_client "
-        if [ ! -f '${SSH_KEY}' ]; then
-            ssh-keygen -t ed25519 -f '${SSH_KEY}' -N '' -C 'beegfs-deploy-\$(date +%Y%m%d)'
-        fi
-        sshpass -p '${SSH_PASSWORD}' ssh-copy-id -i '${SSH_KEY}.pub' \
-            ${SSH_OPTS} '${SSH_USER}@${ip}'
-    " || {
-        echo "ERROR: ssh-copy-id failed for ${ip}."
-        exit 1
-    }
-    echo "   Key installed on ${ip}."
-    echo ""
+    echo "--- ${ip} ---"
+
+    # Check if slave is already reachable from client via key
+    if ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
+        "ssh ${SSH_OPTS} -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \
+            'ssh -o BatchMode=yes -o ConnectTimeout=5 ${SSH_OPTS} ${SSH_USER}@${ip} \"echo ok\"'" 2>/dev/null; then
+        echo "  [skip] Already configured."
+        continue
+    fi
+
+    # Generate key on client if not exists, then ssh-copy-id to slave
+    ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
+        "ssh ${SSH_OPTS} -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \
+            'if [ ! -f ~/.ssh/id_ed25519 ]; then
+               ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N \"\" -C beegfs-deploy-\$(date +%Y%m%d) >/dev/null 2>&1
+             fi
+             sshpass -p \"${SSH_PASSWORD}\" ssh-copy-id -f ${SSH_OPTS} ${SSH_USER}@${ip} 2>&1 | tail -1'"
+    echo "  Key installed on ${ip}."
 done
 
 # ============================================================
-# Step 4: Verify
+# Step 5: Verify
 # ============================================================
 
+echo ""
 echo "========================================"
 echo "Verifying SSH access..."
 echo "========================================"
 
 all_ok=true
 
-echo -n "  ${SSH_USER}@${CLIENT_SERVER} (via jump): "
-if ssh_to_client "echo OK" 2>/dev/null; then
+echo -n "  ${SSH_USER}@${CLIENT_SERVER}: "
+if ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
+    "ssh -o BatchMode=yes ${SSH_OPTS} -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' 'echo OK'" 2>/dev/null; then
     echo "OK"
 else
     echo "FAILED"
@@ -103,8 +126,10 @@ else
 fi
 
 for ip in "${SLAVE_SERVERS[@]}"; do
-    echo -n "  ${SSH_USER}@${ip} (via client jump): "
-    if ssh_to_slave "${ip}" "echo OK" 2>/dev/null; then
+    echo -n "  ${SSH_USER}@${ip}: "
+    if ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
+        "ssh -o BatchMode=yes ${SSH_OPTS} -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \
+            'ssh -o BatchMode=yes ${SSH_OPTS} ${SSH_USER}@${ip} \"echo OK\"'" 2>/dev/null; then
         echo "OK"
     else
         echo "FAILED"
