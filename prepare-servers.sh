@@ -38,7 +38,7 @@ echo "========================================"
 
 echo ""
 echo ">>> Time synchronisation..."
-apt-get update -qq || echo "  (apt update had errors, continuing)"
+apt-get update -qq
 
 if systemctl is-active systemd-timesyncd &>/dev/null; then
     echo "  systemd-timesyncd already active."
@@ -71,9 +71,9 @@ echo "  Done."
 echo ""
 echo ">>> Installing essential packages..."
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    curl wget tar gzip build-essential \
+    curl wget tar gzip build-essential dkms linux-headers-$(uname -r) \
     htop iotop iftop sysstat fio \
-    >/dev/null 2>&1 || echo "  (some packages unavailable, continuing)"
+    >/dev/null 2>&1
 echo "  Packages installed."
 
 # ============================================================
@@ -126,6 +126,27 @@ for disk in /data/disk1 /data/disk2; do
 done
 
 echo ""
+echo ">>> Setting file descriptor limits..."
+cat > /etc/security/limits.d/99-beegfs.conf <<'EOF'
+root    soft    nofile  1000000
+root    hard    nofile  1000000
+*       soft    nofile  1000000
+*       hard    nofile  1000000
+EOF
+echo "  Done."
+
+# ============================================================
+# 6. Result summary
+# ============================================================
+
+echo ""
 echo "========================================"
 echo "Server preparation complete!"
 echo "========================================"
+echo ""
+echo "Checks:"
+echo "  Time sync:            $(systemctl is-active chrony 2>/dev/null || systemctl is-active ntp 2>/dev/null || systemctl is-active systemd-timesyncd 2>/dev/null || echo 'UNKNOWN')"
+echo "  NOPASSWD sudo:        $(if sudo -n true 2>/dev/null; then echo 'OK'; else echo 'FAILED'; fi)"
+echo "  Metadata mount:       $(mountpoint -q '${BEEGFS_META_MOUNT}' 2>/dev/null && echo 'OK' || echo 'NOT MOUNTED')"
+echo "  Storage disk1:        $(mountpoint -q /data/disk1 2>/dev/null && echo 'OK' || echo 'NOT MOUNTED')"
+echo "  Storage disk2:        $(mountpoint -q /data/disk2 2>/dev/null && echo 'OK' || echo 'NOT MOUNTED')"

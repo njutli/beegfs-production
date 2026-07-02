@@ -62,8 +62,8 @@ for ip in "${SLAVE_SERVERS[@]}"; do
     echo ">>> ${ip}"
     wait_ssh "${ip}" || { echo "ERROR: Cannot SSH to ${ip}."; exit 1; }
 
-    # Copy prepare-servers.sh via client jump
-    ssh_to_client "cat > /tmp/prepare-servers.sh" < "${SCRIPT_DIR}/prepare-servers.sh"
+    # Copy prepare-servers.sh to slave and execute
+    ssh_to_slave "${ip}" "cat > /tmp/prepare-servers.sh" < "${SCRIPT_DIR}/prepare-servers.sh"
     ssh_to_slave "${ip}" "sudo bash /tmp/prepare-servers.sh"
     echo ""
 done

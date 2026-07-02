@@ -92,7 +92,7 @@ ssh_to_slave() {
     local ip=$1; shift
     sshpass -p "${HK_ECS_PASSWORD}" ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
         "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \
-            'ssh ${SSH_OPTS} '\''${SSH_USER}@${ip}'\'' \"\$@\"'"
+            ssh ${SSH_OPTS} ${SSH_USER}@${ip} \"\$@\""
 }
 
 # Copy file to remote server via jump
