@@ -255,7 +255,7 @@ deploy_meta() {
                 sudo /opt/beegfs/sbin/beegfs-setup-meta \
                     -p ${BEEGFS_META_DIR} \
                     -s ${id} \
-                    -m ${BEEGFS_MGMTD_HOST} || { echo "  ERROR: beegfs-setup-meta failed on ${ip}"; exit 1; }
+                    -m ${BEEGFS_MGMTD_HOST} || { echo '  ERROR: beegfs-setup-meta failed on '${ip}; exit 1; }
             fi
 
             [ -f /etc/beegfs/beegfs-meta.conf ] && sudo sed -i 's|^[[:space:]]*#\?[[:space:]]*\(sysMgmtdHost\)[[:space:]]*=.*|\1                 = ${BEEGFS_MGMTD_HOST}|' /etc/beegfs/beegfs-meta.conf
