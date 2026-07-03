@@ -18,7 +18,7 @@
 #     Group 2: 150-disk2 + 152-disk1
 #     Group 3: 151-disk2 + 152-disk2
 #
-# 官方文档: https://doc.beegfs.io/latest/
+# 官方文档: https://doc.beegfs.io/7.3.2/
 # ============================================================
 
 # --- Client + Metadata Server (157) ---
@@ -42,14 +42,14 @@ META_SERVERS=( "${CLIENT_SERVER}" "${SLAVE_SERVERS[@]}" )
 ALL_SERVERS=( "${CLIENT_SERVER}" "${SLAVE_SERVERS[@]}" )
 
 # --- BeeGFS Version ---
-# 使用 BeeGFS 8.x (官方最新)
-BEEGFS_MAJOR_VERSION="8"
+# 使用 BeeGFS 7.3.2 (镜像免费, 不需 license; 8.x 镜像需付费 license)
+BEEGFS_MAJOR_VERSION="7"
+BEEGFS_RELEASE_VERSION="7.3.2"
 
 # --- BeeGFS Service Hosts ---
 BEEGFS_MGMTD_HOST="10.20.1.157"
-# mgmtd 监听两个端口: 8008=BeeMsg(meta/storage/client 连 mgmtd 用), 8010=gRPC(beegfs CLI 用)
-BEEGFS_MGMTD_PORT="8008"        # BeeMsg port
-BEEGFS_MGMTD_GRPC_PORT="8010"   # gRPC port (beegfs CLI tool)
+# 7.x: mgmtd 监听 8008 (BeeMsg), beegfs-ctl 通过 .conf 文件连 mgmtd (无 gRPC)
+BEEGFS_MGMTD_PORT="8008"
 BEEGFS_META_PORT="8005"
 BEEGFS_STORAGE_PORT="8003"
 BEEGFS_CLIENT_PORT="8004"
@@ -62,8 +62,9 @@ BEEGFS_STORAGE_DIR_SLAVE_2="/data/disk2"
 # Metadata: ext4 on dedicated nvme1n1 (官方推荐 ext4 for metadata)
 BEEGFS_META_DIR="/mnt/beegfs-meta/beegfs_meta"
 
-# Management: SQLite database (8.x uses SQLite, not directory)
-BEEGFS_MGMTD_DB="/var/lib/beegfs/mgmtd.sqlite"
+# Management: 7.x uses directory (beegfs-setup-mgmtd -p), not SQLite
+# 用 /var/lib/beegfs/mgmtd 子目录, 避免与 /var/lib/beegfs/client (beegfs-client 包创建) 冲突
+BEEGFS_MGMTD_DB="/var/lib/beegfs/mgmtd"
 
 # --- Client Mount ---
 BEEGFS_MOUNT_POINT="/mnt/beegfs"
@@ -134,33 +135,24 @@ scp_to() {
 BEEGFS_CONN_INTERFACES=""
 BEEGFS_CONN_INTERFACES_FILE="/etc/beegfs/conninf.conf"
 
-# --- TLS & Authentication (8.x required, can disable for testing) ---
-BEEGFS_TLS_DISABLE="true"
+# --- TLS & Authentication (7.x: connDisableAuthentication in .conf files) ---
+# 7.x: 所有服务 (mgmtd/meta/storage/client) 用 .conf 文件, 设 connDisableAuthentication = true
+# beegfs-ctl 读 /etc/beegfs/beegfs-ctl.conf 里的 sysMgmtdHost + connDisableAuthentication
 BEEGFS_AUTH_DISABLE="true"
 
-# beegfs CLI 工具(8.x)走 gRPC 连 mgmtd, 必须通过环境变量配置地址/TLS/auth,
-# 否则连不上 mgmtd (会报 missing port / EOF)。sudo 默认不保留环境, 用 sudo -E。
-# 用法: eval "$(beegfs_cli_env)" && sudo -E beegfs ...
-beegfs_cli_env() {
-    printf 'export BEEGFS_MGMTD_ADDR=%s:%s BEEGFS_TLS_DISABLE=%s BEEGFS_AUTH_DISABLE=%s\n' \
-        "${BEEGFS_MGMTD_HOST}" "${BEEGFS_MGMTD_GRPC_PORT}" \
-        "${BEEGFS_TLS_DISABLE}" "${BEEGFS_AUTH_DISABLE}"
-}
-
 # --- Tuning (per official docs) ---
-# Stripe pattern: mirrored (启用 buddy group 镜像)
-BEEGFS_STRIPE_PATTERN="mirrored"
-BEEGFS_STRIPE_SIZE="1MiB"
+# Stripe pattern: buddymirror (7.x: --pattern=buddymirror)
+BEEGFS_STRIPE_PATTERN="buddymirror"
+BEEGFS_STRIPE_SIZE="1M"
 # Stripe count = number of buddy groups = 3 (storage)
 BEEGFS_STRIPE_COUNT="3"
 
 # --- XFS Mount Options (per official storage tuning docs) ---
 BEEGFS_XFS_MOUNT_OPTS="noatime,nodiratime,logbufs=8,logbsize=256k,largeio,inode64,swalloc,allocsize=131072k"
 
-# --- Repo (BeeGFS 8.x, Ubuntu 22.04 jammy) ---
+# --- Repo (BeeGFS 7.3.2, Ubuntu 22.04 jammy) ---
 BEEGFS_REPO_DIST="jammy"
-BEEGFS_REPO_URL="https://www.beegfs.io/release/beegfs_${BEEGFS_MAJOR_VERSION}/dists/beegfs-${BEEGFS_REPO_DIST}.list"
-BEEGFS_REPO_KEY_URL="https://www.beegfs.io/release/beegfs_${BEEGFS_MAJOR_VERSION}/gpg/DEB-GPG-KEY-beegfs_${BEEGFS_MAJOR_VERSION}.asc"
+BEEGFS_REPO_URL="https://www.beegfs.io/release/beegfs_${BEEGFS_RELEASE_VERSION}/dists/beegfs-${BEEGFS_REPO_DIST}.list"
 BEEGFS_REPO_KEYRING="/usr/share/keyrings/beegfs.gpg"
 BEEGFS_REPO_LIST="/etc/apt/sources.list.d/beegfs.list"
 

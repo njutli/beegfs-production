@@ -14,11 +14,11 @@
 
 ### 官方文档
 
-- 架构: https://doc.beegfs.io/latest/architecture/overview.html
-- 快速开始: https://doc.beegfs.io/latest/quick_start_guide/quick_start_guide.html
-- 镜像: https://doc.beegfs.io/latest/advanced_topics/mirroring.html
-- 存储调优: https://doc.beegfs.io/latest/advanced_topics/storage_tuning.html
-- 条带化: https://doc.beegfs.io/latest/advanced_topics/striping.html
+- 架构: https://doc.beegfs.io/7.3.2/architecture/overview.html
+- 快速开始: https://doc.beegfs.io/7.3.2/quick_start_guide/quick_start_guide.html
+- 镜像: https://doc.beegfs.io/7.3.2/advanced_topics/mirroring.html
+- 存储调优: https://doc.beegfs.io/7.3.2/advanced_topics/storage_tuning.html
+- 条带化: https://doc.beegfs.io/7.3.2/advanced_topics/striping.html
 
 ## 架构
 
