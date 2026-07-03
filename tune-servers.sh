@@ -4,7 +4,7 @@ set -euo pipefail
 # ============================================================
 # Performance Tuning for BeeGFS (per official docs)
 #
-# Official doc: https://doc.beegfs.io/latest/advanced_topics/storage_tuning.html
+# Official doc: https://doc.beegfs.io/7.3.2/advanced_topics/storage_tuning.html
 #
 # Key differences from Ceph/TiKV tuning:
 #   - THP: ENABLE (always) — BeeGFS recommends, opposite of Ceph

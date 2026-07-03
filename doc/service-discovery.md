@@ -27,7 +27,7 @@ mgmtd 的信息来源于各节点的**主动注册**：
 - **meta 节点**：启动时读 `beegfs-meta.conf` 中的 `sysMgmtdHost`，向 mgmtd 注册自己（IP、端口、node ID）
 - **storage 节点**：通过 `beegfs-setup-storage -m <mgmtd_ip>` 时指定的 mgmtd 地址，启动时注册
 
-注册信息持久化存储在 mgmtd 的 SQLite 数据库中：`/var/lib/beegfs/mgmtd.sqlite`。
+注册信息持久化存储在 mgmtd 的目录中：`/var/lib/beegfs/mgmtd`（7.x 目录格式，非 SQLite）。
 
 ### 3. 心跳保活
 

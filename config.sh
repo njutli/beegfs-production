@@ -3,7 +3,7 @@
 # BeeGFS Production Deployment Configuration (4 Machines)
 #
 # 架构说明 (官方最佳实践 + 镜像):
-#   157 (mgmtd + meta + client):  nvme1n1(894G ext4) → metadata；mgmtd 用 SQLite
+#   157 (mgmtd + meta + client):  nvme1n1(894G ext4) → metadata；mgmtd 用目录
 #   150 (meta + storage):    nvme1n1(894G ext4) → metadata
 #                           nvme2n1(7T XFS) + nvme3n1(7T XFS) → 2 storage targets
 #   151 (meta + storage):    同 150
@@ -136,8 +136,8 @@ BEEGFS_CONN_INTERFACES=""
 BEEGFS_CONN_INTERFACES_FILE="/etc/beegfs/conninf.conf"
 
 # --- TLS & Authentication (7.x: connDisableAuthentication in .conf files) ---
-# 7.x: 所有服务 (mgmtd/meta/storage/client) 用 .conf 文件, 设 connDisableAuthentication = true
-# beegfs-ctl 读 /etc/beegfs/beegfs-ctl.conf 里的 sysMgmtdHost + connDisableAuthentication
+# 7.x: 所有服务 (mgmtd/meta/storage/client/helperd) 用 .conf 文件, 设 connDisableAuthentication = true
+# beegfs-ctl 读 /etc/beegfs/beegfs-client.conf 里的 sysMgmtdHost + connDisableAuthentication
 BEEGFS_AUTH_DISABLE="true"
 
 # --- Tuning (per official docs) ---

@@ -69,18 +69,18 @@ for svc in beegfs-mgmtd beegfs-meta beegfs-storage beegfs-client; do
 done
 echo ""
 echo "BeeGFS nodes:"
-# 8.x beegfs CLI 走 gRPC (端口 8010), TLS/auth 已禁用
-export BEEGFS_MGMTD_ADDR=${BEEGFS_MGMTD}:8010 BEEGFS_TLS_DISABLE=true BEEGFS_AUTH_DISABLE=true
-sudo -E beegfs node list 2>&1 || true
+# 7.x beegfs-ctl 读 /etc/beegfs/beegfs-client.conf (sysMgmtdHost)
+sudo beegfs-ctl --listnodes 2>&1 || true
 echo ""
 echo "BeeGFS targets (state):"
-sudo -E beegfs target list --state 2>&1 || true
+sudo beegfs-ctl --listtargets --state 2>&1 || true
 echo ""
 echo "BeeGFS mirror groups:"
-sudo -E beegfs mirror list 2>&1 || true
+sudo beegfs-ctl --listmirrorgroups --nodetype=meta 2>&1 || true
+sudo beegfs-ctl --listmirrorgroups --nodetype=storage 2>&1 || true
 echo ""
 echo "BeeGFS health df:"
-sudo -E beegfs health df 2>&1 || true
+sudo beegfs-df 2>&1 || true
 
 # --- Layer 4: End-to-End ---
 echo ""

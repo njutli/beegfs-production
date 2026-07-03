@@ -14,7 +14,7 @@ set -euo pipefail
 #   Metadata: 2 buddy groups (4 meta nodes)
 #   Storage:  3 buddy groups (6 targets)
 #
-# Official docs: https://doc.beegfs.io/latest/
+# Official docs: https://doc.beegfs.io/7.3.2/
 #
 # Usage: bash deploy-beegfs.sh [status|install|deploy|mount|unmount|test|all]
 # ============================================================

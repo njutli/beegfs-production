@@ -50,12 +50,30 @@ echo "========================================"
 # ------------------------------------------------------------
 echo ""
 echo ">>> ${CLIENT_SERVER} (157: client+mgmtd+meta) 保守清理 — 只动 BeeGFS"
-run_on "${CLIENT_SERVER}" "sudo systemctl stop beegfs-client beegfs-helperd beegfs-meta beegfs-mgmtd 2>/dev/null || true"
+# 按依赖顺序逐服务停止: client → helperd → meta → mgmtd (mgmtd 最后, 其他服务依赖它)
+# 每服务 timeout 30s, 超时后重试一次, 再超时则退出让人排查
+run_on "${CLIENT_SERVER}" "
+for svc in beegfs-client beegfs-helperd beegfs-meta beegfs-mgmtd; do
+    echo \"  [157] stopping \$svc (attempt 1)...\"
+    sudo timeout 30 systemctl stop \"\$svc\" 2>/dev/null || true
+    if sudo systemctl is-active --quiet \"\$svc\" 2>/dev/null; then
+        echo \"  [157] \$svc still active, retry (attempt 2)...\"
+        sleep 5
+        sudo timeout 30 systemctl stop \"\$svc\" 2>/dev/null || true
+        if sudo systemctl is-active --quiet \"\$svc\" 2>/dev/null; then
+            echo \"  [157] ERROR: \$svc still active after 2 attempts. Check: sudo journalctl -u \$svc --no-pager -n 30\"
+            echo \"  [157] Aborting — resolve the issue manually before re-running.\"
+            exit 1
+        fi
+    fi
+    echo \"  [157] \$svc: stopped\"
+done
+"
 run_on "${CLIENT_SERVER}" "sudo systemctl disable beegfs-client beegfs-helperd beegfs-meta beegfs-mgmtd 2>/dev/null || true"
 run_on "${CLIENT_SERVER}" "sudo systemctl reset-failed beegfs-client beegfs-helperd beegfs-meta beegfs-mgmtd 2>/dev/null || true"
 run_on "${CLIENT_SERVER}" "sudo umount ${BEEGFS_MOUNT_POINT} 2>/dev/null || true"
 run_on "${CLIENT_SERVER}" "sudo rm -rf ${BEEGFS_META_DIR}"              # /mnt/beegfs-meta/beegfs_meta (nvme1n1, BeeGFS 专用)
-run_on "${CLIENT_SERVER}" "sudo rm -rf ${BEEGFS_MGMTD_DB}/*"            # /var/lib/beegfs/* (7.x 目录, 拓扑数据, 重部署重建)
+run_on "${CLIENT_SERVER}" "sudo rm -rf ${BEEGFS_MGMTD_DB}/*"            # /var/lib/beegfs/mgmtd/* (拓扑数据, 重部署重建)
 run_on "${CLIENT_SERVER}" "sudo rm -rf ${BEEGFS_MOUNT_POINT}"          # 空挂载点目录
 echo "  [157 红线] 未触碰: /mnt/data01-04 /mnt/container /opt/weka /weka /var/lib/kubelet /var/lib/docker md0 K8s/docker"
 
@@ -65,9 +83,26 @@ echo "  [157 红线] 未触碰: /mnt/data01-04 /mnt/container /opt/weka /weka /v
 for ip in "${SLAVE_SERVERS[@]}"; do
     echo ""
     echo ">>> ${ip} (slave) 彻底清理"
-    run_on "${ip}" "sudo systemctl stop beegfs-client beegfs-storage beegfs-meta 2>/dev/null || true"
-    run_on "${ip}" "sudo systemctl disable beegfs-client beegfs-storage beegfs-meta 2>/dev/null || true"
-    run_on "${ip}" "sudo systemctl reset-failed beegfs-client beegfs-storage beegfs-meta 2>/dev/null || true"
+    # 按依赖顺序: storage → meta (meta 依赖 mgmtd, 157 的 mgmtd 已先停)
+    run_on "${ip}" "
+for svc in beegfs-storage beegfs-meta; do
+    echo \"  [${ip}] stopping \$svc (attempt 1)...\"
+    sudo timeout 30 systemctl stop \"\$svc\" 2>/dev/null || true
+    if sudo systemctl is-active --quiet \"\$svc\" 2>/dev/null; then
+        echo \"  [${ip}] \$svc still active, retry (attempt 2)...\"
+        sleep 5
+        sudo timeout 30 systemctl stop \"\$svc\" 2>/dev/null || true
+        if sudo systemctl is-active --quiet \"\$svc\" 2>/dev/null; then
+            echo \"  [${ip}] ERROR: \$svc still active after 2 attempts. Check: sudo journalctl -u \$svc --no-pager -n 30\"
+            echo \"  [${ip}] Aborting — resolve the issue manually before re-running.\"
+            exit 1
+        fi
+    fi
+    echo \"  [${ip}] \$svc: stopped\"
+done
+"
+    run_on "${ip}" "sudo systemctl disable beegfs-storage beegfs-meta 2>/dev/null || true"
+    run_on "${ip}" "sudo systemctl reset-failed beegfs-storage beegfs-meta 2>/dev/null || true"
     run_on "${ip}" "sudo rm -rf ${BEEGFS_META_DIR}"                     # meta 数据 (整个目录删除)
     run_on "${ip}" "sudo bash -c 'find ${BEEGFS_STORAGE_DIR_SLAVE_1} -mindepth 1 -delete; find ${BEEGFS_STORAGE_DIR_SLAVE_2} -mindepth 1 -delete'"  # target format + 数据 (含隐藏文件, 700权限需root glob)
     run_on "${ip}" "sudo rm -rf ${BEEGFS_MGMTD_DB}/* 2>/dev/null || true"

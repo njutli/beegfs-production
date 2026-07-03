@@ -13,23 +13,24 @@
 每次启动测试脚本前，手动确认：
 
 ```bash
-# 所有服务必须 active
+# 所有服务必须 active (157 上同时运行 mgmtd+meta+helperd+client)
 sudo systemctl status beegfs-mgmtd beegfs-meta beegfs-storage beegfs-client --no-pager
 
-# 8.x beegfs CLI 走 gRPC, 需设置环境变量 (mgmtd 在 157, gRPC 端口 8010, TLS/auth 已禁用)
-export BEEGFS_MGMTD_ADDR=10.20.1.157:8010 BEEGFS_TLS_DISABLE=true BEEGFS_AUTH_DISABLE=true
+# 7.x beegfs-ctl 读 /etc/beegfs/beegfs-client.conf (sysMgmtdHost + connDisableAuthentication)
+# 无需环境变量, 直接执行
 
 # 节点在线
-sudo -E beegfs node list
+sudo beegfs-ctl --listnodes
 
 # Storage targets 全部在线 (状态 GOOD)
-sudo -E beegfs target list --state
+sudo beegfs-ctl --listtargets --state
 
 # Buddy groups (镜像)
-sudo -E beegfs mirror list
+sudo beegfs-ctl --listmirrorgroups --nodetype=meta
+sudo beegfs-ctl --listmirrorgroups --nodetype=storage
 
 # 容量
-sudo -E beegfs health df
+sudo beegfs-df
 ```
 
 如果有服务非 active 或 target 离线，**不要开始测试**。先修复问题。
@@ -247,5 +248,5 @@ fio --name=randread ...
 1. BeeGFS metadata 和 storage 分离到不同物理设备（metadata 用 nvme1n1）
 2. 数据通信走 10GbE 管理网 (eno12399)；100GbE 接口不用于 BeeGFS
 3. 启用 metadata + storage buddy 镜像，跨节点冗余（任一节点宕机数据可访问）
-4. stripe pattern = mirrored, num-targets = buddy group 数 (3)
+4. stripe pattern = buddymirror, --numtargets = buddy group 数 (3)
 5. 监控：服务状态 / target 在线 / 容量 / 网络带宽

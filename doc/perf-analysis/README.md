@@ -34,7 +34,7 @@
 - THP: always (启用，与 Ceph 相反)
 - IO 调度器: deadline
 - XFS 挂载: noatime,logbufs=8,logbsize=256k,largeio,inode64,swalloc,allocsize=131072k
-- dirty_ratio: 5/20
+- dirty_ratio: 5/10
 
 ## 参考基线（JuiceFS+Ceph 项目）
 
@@ -47,11 +47,11 @@ JuiceFS + Ceph EC 4+2 (3 nodes, HDD-backed) 的 cold-r1 基线：
 - randwrite (bs=256K): 29.0 MiB/s
 - randrw (bs=256K): 15.1/14.7 MiB/s
 
-BeeGFS + NVMe + 100GbE + 镜像，预期性能应显著高于此基线。
+BeeGFS + NVMe + 10GbE + 镜像，预期性能应显著高于此基线。
 
 ## 官方文档参考
 
-- 架构: https://doc.beegfs.io/latest/architecture/overview.html
-- 镜像: https://doc.beegfs.io/latest/advanced_topics/mirroring.html
-- 存储调优: https://doc.beegfs.io/latest/advanced_topics/storage_tuning.html
-- 条带化: https://doc.beegfs.io/latest/advanced_topics/striping.html
+- 架构: https://doc.beegfs.io/7.3.2/architecture/overview.html
+- 镜像: https://doc.beegfs.io/7.3.2/advanced_topics/mirroring.html
+- 存储调优: https://doc.beegfs.io/7.3.2/advanced_topics/storage_tuning.html
+- 条带化: https://doc.beegfs.io/7.3.2/advanced_topics/striping.html
