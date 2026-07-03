@@ -378,8 +378,18 @@ setup_mirroring() {
     # --- 启用元数据镜像 (7.x: beegfs-ctl --mirrormd, 要求 client 未挂载) ---
     echo "  Enabling metadata mirroring (beegfs-ctl --mirrormd)..."
     _run "${BEEGFS_MGMTD_HOST}" "
-        sudo beegfs-ctl --mirrormd || { echo '  ERROR: beegfs-ctl --mirrormd failed'; exit 1; }
-        echo '  Metadata mirroring enabled.'
+        for i in 1 2 3; do
+            if sudo beegfs-ctl --mirrormd 2>&1; then
+                echo '  Metadata mirroring enabled.'
+                exit 0
+            fi
+            if [ \$i -lt 3 ]; then
+                echo \"  --mirrormd attempt \$i failed, retry in 5s...\"
+                sleep 5
+            fi
+        done
+        echo '  ERROR: beegfs-ctl --mirrormd failed after 3 attempts'
+        exit 1
     "
 
     # 官方要求: --mirrormd 后重启所有 meta 服务
@@ -477,21 +487,36 @@ do_status() {
     echo "========================================"
     echo ""
 
-    for ip in "${ALL_SERVERS[@]}"; do
+    # 预期服务映射: 157=mgmtd+meta+helperd+client, slaves=meta+storage
+    _status_services() {
+        local ip=$1 role=$2
+        local svcs
+        if [ "${role}" = "client" ]; then
+            svcs="beegfs-mgmtd beegfs-meta beegfs-helperd beegfs-client"
+        else
+            svcs="beegfs-meta beegfs-storage"
+        fi
         echo ">>> ${ip} ($(_run "${ip}" 'hostname' 2>/dev/null | tail -1 || echo "${ip}"))"
         _run "${ip}" "
-            for svc in beegfs-mgmtd beegfs-meta beegfs-storage beegfs-helperd beegfs-client; do
+            for svc in ${svcs}; do
                 echo -n '  '\${svc}': '
-                sudo systemctl is-active \${svc} 2>/dev/null || echo 'not installed'
+                sudo systemctl is-active \${svc} 2>/dev/null || echo 'inactive'
             done
         "
         echo ""
+    }
+
+    _status_services "${CLIENT_SERVER}" client
+    for ip in "${SLAVE_SERVERS[@]}"; do
+        _status_services "${ip}" slave
     done
 
     echo ">>> Cluster info:"
     _run "${BEEGFS_MGMTD_HOST}" "
-        echo '  Nodes:'
-        sudo beegfs-ctl --listnodes 2>&1
+        echo '  Nodes (meta):'
+        sudo beegfs-ctl --listnodes --nodetype=meta 2>&1
+        echo '  Nodes (storage):'
+        sudo beegfs-ctl --listnodes --nodetype=storage 2>&1
         echo ''
         echo '  Targets (state):'
         sudo beegfs-ctl --listtargets --state 2>&1
@@ -525,26 +550,30 @@ verify_deployment() {
     echo "========================================"
     local rc=0 ip svc
 
-    # [1] 关键服务 active (client: mgmtd+meta+helperd+client; slave: meta+storage)
+    # [1] 关键服务 active (157: mgmtd+meta+helperd+client; slaves: meta+storage)
     echo ">>> [1/4] 服务状态..."
-    for ip in "${ALL_SERVERS[@]}"; do
-        for svc in beegfs-mgmtd beegfs-meta beegfs-storage beegfs-helperd beegfs-client; do
-            [ "${ip}" != "${CLIENT_SERVER}" ] && { [ "${svc}" = "beegfs-mgmtd" ] || [ "${svc}" = "beegfs-helperd" ] || [ "${svc}" = "beegfs-client" ]; } && continue
-            [ "${ip}" = "${CLIENT_SERVER}" ] && [ "${svc}" = "beegfs-storage" ] && continue
-            if _run "${ip}" "sudo systemctl is-active --quiet ${svc}" 2>/dev/null; then
-                echo "  OK   ${ip} ${svc}"
-            else
-                echo "  FAIL ${ip} ${svc} not active"; rc=1
-            fi
-        done
+    _verify_svc() {
+        local ip=$1 svc=$2
+        if _run "${ip}" "sudo systemctl is-active --quiet ${svc}" 2>/dev/null; then
+            echo "  OK   ${ip} ${svc}"
+        else
+            echo "  FAIL ${ip} ${svc} not active"; rc=1
+        fi
+    }
+    _verify_svc "${CLIENT_SERVER}" beegfs-mgmtd
+    _verify_svc "${CLIENT_SERVER}" beegfs-meta
+    _verify_svc "${CLIENT_SERVER}" beegfs-helperd
+    _verify_svc "${CLIENT_SERVER}" beegfs-client
+    for ip in "${SLAVE_SERVERS[@]}"; do
+        _verify_svc "${ip}" beegfs-meta
+        _verify_svc "${ip}" beegfs-storage
     done
 
     # [2] 节点注册 (4 meta + 3 storage)
     echo ">>> [2/4] 节点注册..."
     local nodes n_meta n_storage
-    nodes=$(_run "${BEEGFS_MGMTD_HOST}" "sudo beegfs-ctl --listnodes 2>&1")
-    n_meta=$(echo "${nodes}" | grep -cE '^\[Meta\]|Meta\s' || true)
-    n_storage=$(echo "${nodes}" | grep -cE '^\[Storage\]|Storage\s' || true)
+    n_meta=$(_run "${BEEGFS_MGMTD_HOST}" "sudo beegfs-ctl --listnodes --nodetype=meta 2>&1" | grep -cE '\[ID:' || true)
+    n_storage=$(_run "${BEEGFS_MGMTD_HOST}" "sudo beegfs-ctl --listnodes --nodetype=storage 2>&1" | grep -cE '\[ID:' || true)
     echo "  meta: ${n_meta} (expect 4)  storage: ${n_storage} (expect 3)"
     [ "${n_meta}" -ge 4 ] || { echo "  FAIL meta count"; rc=1; }
     [ "${n_storage}" -ge 3 ] || { echo "  FAIL storage count"; rc=1; }
@@ -554,8 +583,8 @@ verify_deployment() {
     local targets n_tgt n_good
     targets=$(_run "${BEEGFS_MGMTD_HOST}" "sudo beegfs-ctl --listtargets --state 2>&1")
     echo "${targets}" | sed 's/^/    /'
-    n_tgt=$(echo "${targets}" | grep -ciE '^\s*\[|target' || true)
-    n_good=$(echo "${targets}" | grep -ciE 'good' || true)
+    n_tgt=$(echo "${targets}" | grep -ciE '^\s+[0-9]+\s' || true)
+    n_good=$(echo "${targets}" | grep -ciE '^\s+[0-9]+\s+.*Good' || true)
     echo "  storage targets GOOD: ${n_good} (expect >= 6)"
     [ "${n_good}" -ge 6 ] || { echo "  FAIL storage target count < 6 (storage 盘是否已准备?)"; rc=1; }
 
@@ -563,8 +592,8 @@ verify_deployment() {
     echo ">>> [4/4] Buddy groups (期望 5) + client mount..."
     local mlist n_grp
     mlist=$(_run "${BEEGFS_MGMTD_HOST}" "sudo beegfs-ctl --listmirrorgroups --nodetype=meta 2>&1; echo '---'; sudo beegfs-ctl --listmirrorgroups --nodetype=storage 2>&1")
-    n_grp=$(echo "${mlist}" | grep -ciE 'group' || true)
-    echo "  buddy groups (lines): ${n_grp} (expect >= 5)"
+    n_grp=$(echo "${mlist}" | grep -cE '^\s+[0-9]+\s+[0-9]+\s+[0-9]+\s*$' || true)
+    echo "  buddy groups: ${n_grp} (expect >= 5)"
     [ "${n_grp}" -ge 5 ] || { echo "  FAIL buddy group count < 5 (镜像未完全建立)"; rc=1; }
     if _run "${CLIENT_SERVER}" "mountpoint -q ${BEEGFS_MOUNT_POINT}" 2>/dev/null; then
         echo "  OK   client mounted"
