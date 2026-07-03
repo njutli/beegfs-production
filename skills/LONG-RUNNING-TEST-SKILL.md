@@ -81,7 +81,7 @@ date; sleep 600
 
 1. **测试进程状态**
    ```bash
-   ps aux | grep -E 'fio|bench-|juicefs' | grep -v grep
+   ps aux | grep -E 'fio|bench-' | grep -v grep
    ```
 
 2. **测试日志尾部**
@@ -89,9 +89,11 @@ date; sleep 600
    tail -20 /tmp/opencode/<test-name>.out
    ```
 
-3. **Ceph 集群健康**
+3. **BeeGFS 集群健康**
    ```bash
-   sudo ceph health
+   export BEEGFS_MGMTD_ADDR=10.20.1.157:8010 BEEGFS_TLS_DISABLE=true BEEGFS_AUTH_DISABLE=true
+   sudo -E beegfs health check
+   sudo -E beegfs target list --state
    ```
 
 ### 3.2 分析逻辑
@@ -157,7 +159,7 @@ AI 应：
 
 ## 六、适用场景
 
-- Ceph/JuiceFS 性能基线测试（冷态/暖态，多轮验证）
+- BeeGFS 性能基线测试（冷态/暖态，多轮验证）
 - 任何需要在远端服务器上长时间运行、需要周期性检查的后台任务
 - 需要根据中间结果决定下一步的测试流程
 
@@ -170,7 +172,7 @@ AI 应：
 2. AI 启动第一个测试（setsid 后台）
 3. AI 调用 sleep 600（工作时间）
 4. sleep 返回，AI 被唤醒
-5. AI SSH 检查：ps + tail + ceph health
+5. AI SSH 检查：ps + tail + beegfs health
 6. 分析：测试还在跑，health OK → sleep 600
 7. 重复 5-6 直到测试完成
 8. 测试完成 → 更新 todo → 启动下一项 → sleep 600

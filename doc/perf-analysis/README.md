@@ -16,8 +16,8 @@
 
 **架构**: 4 节点，启用 metadata + storage 镜像
 
-- **Client+Meta (10.20.1.157)**: client + metadata (nvme1n1 ext4)
-- **Slave1 (10.20.1.150)**: mgmtd + meta + 2 storage (nvme1n1 + 2×XFS)
+- **Client (10.20.1.157)**: mgmtd + meta + client (nvme1n1 ext4)
+- **Slave1 (10.20.1.150)**: meta + 2 storage (nvme1n1 + 2×XFS)
 - **Slave2-3 (10.20.1.151-152)**: meta + 2 storage (同上)
 
 **镜像配置**:

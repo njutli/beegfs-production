@@ -16,14 +16,20 @@
 # 所有服务必须 active
 sudo systemctl status beegfs-mgmtd beegfs-meta beegfs-storage beegfs-client --no-pager
 
-# 节点在线 (mgmtd on 150)
-sudo beegfs-ctl --listnodes --mgmtd_node=10.20.1.150
+# 8.x beegfs CLI 走 gRPC, 需设置环境变量 (mgmtd 在 157, gRPC 端口 8010, TLS/auth 已禁用)
+export BEEGFS_MGMTD_ADDR=10.20.1.157:8010 BEEGFS_TLS_DISABLE=true BEEGFS_AUTH_DISABLE=true
 
-# Storage targets 全部在线
-sudo beegfs-ctl --listtargets --nodetype=storage --mgmtd_node=10.20.1.157
+# 节点在线
+sudo -E beegfs node list
+
+# Storage targets 全部在线 (状态 GOOD)
+sudo -E beegfs target list --state
+
+# Buddy groups (镜像)
+sudo -E beegfs mirror list
 
 # 容量
-beegfs-df
+sudo -E beegfs health df
 ```
 
 如果有服务非 active 或 target 离线，**不要开始测试**。先修复问题。
@@ -239,7 +245,7 @@ fio --name=randread ...
 ## 九、生产环境部署建议
 
 1. BeeGFS metadata 和 storage 分离到不同物理设备（metadata 用 nvme1n1）
-2. 数据通信走 100GbE 网络（enp139s0f0np0）而非 10GbE
-3. MTU 设为 9000（jumbo frame）以提升大块传输效率
-4. RAID0 stripe pattern 适合最大吞吐，无冗余（靠底层 RAID0 保障）
+2. 数据通信走 10GbE 管理网 (eno12399)；100GbE 接口不用于 BeeGFS
+3. 启用 metadata + storage buddy 镜像，跨节点冗余（任一节点宕机数据可访问）
+4. stripe pattern = mirrored, num-targets = buddy group 数 (3)
 5. 监控：服务状态 / target 在线 / 容量 / 网络带宽

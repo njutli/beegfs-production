@@ -13,8 +13,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
-# 限速目标：所有节点的 100GbE 接口
-TARGET_IFACE="enp139s0f0np0"
+# 限速目标：所有节点的 10GbE 接口 (BeeGFS 数据走 eno12399, 10.20.1.0/24)
+# 限到 1Gbps 模拟千兆环境, 用于与千兆集群方案对比测试。
+TARGET_IFACE="eno12399"
 LIMIT_RATE="1gbit"
 LIMIT_BURST="10mb"
 LIMIT_LATENCY="100ms"

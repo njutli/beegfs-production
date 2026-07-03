@@ -3,9 +3,9 @@
 # BeeGFS Production Deployment Configuration (4 Machines)
 #
 # 架构说明 (官方最佳实践 + 镜像):
-#   157 (client + meta):     nvme1n1(894G ext4) → metadata
-#   150 (mgmtd + meta + storage):  nvme1n1(894G ext4) → metadata
-#                                  nvme2n1(7T XFS) + nvme3n1(7T XFS) → 2 storage
+#   157 (mgmtd + meta + client):  nvme1n1(894G ext4) → metadata；mgmtd 用 SQLite
+#   150 (meta + storage):    nvme1n1(894G ext4) → metadata
+#                           nvme2n1(7T XFS) + nvme3n1(7T XFS) → 2 storage targets
 #   151 (meta + storage):    同 150
 #   152 (meta + storage):    同 150
 #
@@ -28,9 +28,9 @@ CLIENT_SERVER="10.20.1.157"
 CLIENT_EXT="203.156.3.194"
 CLIENT_PORT="19891"
 
-# --- Slave Servers (mgmtd + meta + storage) ---
+# --- Slave Servers (meta + storage) ---
 SLAVE_SERVERS=(
-  "10.20.1.150"  # mgmtd + meta + 2 storage
+  "10.20.1.150"  # meta + 2 storage
   "10.20.1.151"  # meta + 2 storage
   "10.20.1.152"  # meta + 2 storage
 )
@@ -47,7 +47,9 @@ BEEGFS_MAJOR_VERSION="8"
 
 # --- BeeGFS Service Hosts ---
 BEEGFS_MGMTD_HOST="10.20.1.157"
-BEEGFS_MGMTD_PORT="8008"
+# mgmtd 监听两个端口: 8008=BeeMsg(meta/storage/client 连 mgmtd 用), 8010=gRPC(beegfs CLI 用)
+BEEGFS_MGMTD_PORT="8008"        # BeeMsg port
+BEEGFS_MGMTD_GRPC_PORT="8010"   # gRPC port (beegfs CLI tool)
 BEEGFS_META_PORT="8005"
 BEEGFS_STORAGE_PORT="8003"
 BEEGFS_CLIENT_PORT="8004"
@@ -92,40 +94,58 @@ ssh_to_client() {
 
 # SSH to slave via HK ECS → client(157) jump
 # Usage: ssh_to_slave <ip> <command_string>
+#
+# 三层跳板 (WSL→HK→157→slave) 引号陷阱: 单层 base64 的 'echo X|base64 -d|bash'
+# 在第二跳被 ssh 拼接时单引号剥离, 管道会在 157 上执行而非 slave 上 (命令跑错机器, 静默)。
+# 解法: 双层 base64 —
+#   1) slave 命令 → b64_slave
+#   2) "157 上 ssh 到 slave 并 decode+exec" 整条 → b64_157
+#   3) HK→157 用 ssh_to_client 的可靠单层模式传 b64_157; 157 decode 得到 cmd_157,
+#      由 157 的 bash 执行 (cmd_157 内含对 slave 的 ssh, 单引号此时由 157 bash 正确解析)。
 ssh_to_slave() {
     local ip=$1
     local cmd="$2"
-    local encoded
-    encoded=$(echo -n "$cmd" | base64 -w0)
+    local b64_slave b64_157 cmd_157
+    b64_slave=$(echo -n "$cmd" | base64 -w0)
+    cmd_157="sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T ${SSH_USER}@${ip} 'echo ${b64_slave} | base64 -d | bash'"
+    b64_157=$(echo -n "$cmd_157" | base64 -w0)
     sshpass -p "${HK_ECS_PASSWORD}" ssh ${SSH_OPTS} "${HK_ECS_USER}@${HK_ECS}" \
-        "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' \
-            sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T ${SSH_USER}@${ip} 'echo ${encoded} | base64 -d | bash'"
+        "sshpass -p '${SSH_PASSWORD}' ssh ${SSH_OPTS} -T -p '${CLIENT_PORT}' '${SSH_USER}@${CLIENT_EXT}' 'echo ${b64_157} | base64 -d | bash'"
 }
 
-# Copy file to remote server via jump
-# Usage: scp_to_server <src_local> <dest_ip> <dest_path>
-# 自动判断目标: CLIENT_SERVER 走一级跳板，slave 走两级跳板
-scp_to_server() {
+# 传文件到远程 (把文件内容 base64 编码进命令, 远程 decode 写入)
+# 注意: 不能用 "cat > file" < localfile — ssh_to_* 的 base64 管道会占用 stdin, 导致传空文件(静默失败)。
+# Usage: scp_to <src_local> <dest_ip> <dest_path>
+scp_to() {
     local src=$1 ip=$2 dest=$3
-    local base64_src
-    base64_src=$(base64 -w0 "$src")
+    local b64
+    b64=$(base64 -w0 "$src")
     if [ "$ip" = "${CLIENT_SERVER}" ]; then
-        ssh_to_client "cat > '$dest'" < "$src"
+        ssh_to_client "echo '${b64}' | base64 -d > '${dest}'"
     else
-        ssh_to_slave "$ip" "cat > '$dest'" < "$src"
+        ssh_to_slave "$ip" "echo '${b64}' | base64 -d > '${dest}'"
     fi
 }
 
 # --- Network ---
-# BeeGFS connInterfacesFile — which NICs to use for data transfer.
-# Leave empty to use default routing. To use the 100G network:
-#   BEEGFS_CONN_INTERFACES="enp139s0f0np0"
+# BeeGFS 走默认路由 = 10GbE 管理网 (eno12399, 10.20.1.0/24)。
+# 100GbE (enp139s0f0np0, 10.3.1.0/24) 不用于 BeeGFS 数据通道。
+# 性能对比测试时用 limit-bandwidth.sh 把 10GbE 限速到 1Gbps 模拟千兆环境。
 BEEGFS_CONN_INTERFACES=""
 BEEGFS_CONN_INTERFACES_FILE="/etc/beegfs/conninf.conf"
 
 # --- TLS & Authentication (8.x required, can disable for testing) ---
 BEEGFS_TLS_DISABLE="true"
 BEEGFS_AUTH_DISABLE="true"
+
+# beegfs CLI 工具(8.x)走 gRPC 连 mgmtd, 必须通过环境变量配置地址/TLS/auth,
+# 否则连不上 mgmtd (会报 missing port / EOF)。sudo 默认不保留环境, 用 sudo -E。
+# 用法: eval "$(beegfs_cli_env)" && sudo -E beegfs ...
+beegfs_cli_env() {
+    printf 'export BEEGFS_MGMTD_ADDR=%s:%s BEEGFS_TLS_DISABLE=%s BEEGFS_AUTH_DISABLE=%s\n' \
+        "${BEEGFS_MGMTD_HOST}" "${BEEGFS_MGMTD_GRPC_PORT}" \
+        "${BEEGFS_TLS_DISABLE}" "${BEEGFS_AUTH_DISABLE}"
+}
 
 # --- Tuning (per official docs) ---
 # Stripe pattern: mirrored (启用 buddy group 镜像)
@@ -137,9 +157,12 @@ BEEGFS_STRIPE_COUNT="3"
 # --- XFS Mount Options (per official storage tuning docs) ---
 BEEGFS_XFS_MOUNT_OPTS="noatime,nodiratime,logbufs=8,logbsize=256k,largeio,inode64,swalloc,allocsize=131072k"
 
-# --- Repo (BeeGFS 8.x) ---
-BEEGFS_REPO_URL="https://www.beegfs.io/release/beegfs_${BEEGFS_MAJOR_VERSION}/dists/beegfs-deb11.list"
-BEEGFS_REPO_KEY="https://www.beegfs.io/release/beegfs_${BEEGFS_MAJOR_VERSION}/gpg/DEB-GPG-KEY-beegfs_${BEEGFS_MAJOR_VERSION}.asc"
+# --- Repo (BeeGFS 8.x, Ubuntu 22.04 jammy) ---
+BEEGFS_REPO_DIST="jammy"
+BEEGFS_REPO_URL="https://www.beegfs.io/release/beegfs_${BEEGFS_MAJOR_VERSION}/dists/beegfs-${BEEGFS_REPO_DIST}.list"
+BEEGFS_REPO_KEY_URL="https://www.beegfs.io/release/beegfs_${BEEGFS_MAJOR_VERSION}/gpg/DEB-GPG-KEY-beegfs_${BEEGFS_MAJOR_VERSION}.asc"
+BEEGFS_REPO_KEYRING="/usr/share/keyrings/beegfs.gpg"
+BEEGFS_REPO_LIST="/etc/apt/sources.list.d/beegfs.list"
 
 # --- Node IDs (for setup commands) ---
 # Metadata node IDs

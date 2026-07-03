@@ -1,9 +1,13 @@
 ---
 name: perf-review-planning
-description: Use when reviewing/validating performance test results or planning next optimization steps for the JuiceFS+Ceph storage tuning project. Covers the mandatory "verify test method before reading data" discipline, control-variable checks, data traceability/credibility red lines, cold/warm cache 口径 rules, and how to maintain the next-stage plan. Trigger on: 校验测试结果, 检查数据, 测试方法, 控制变量, 下一阶段计划, baseline, fullmatrix, results 复核, 数据可信度, perf review, planning.
+description: Use when reviewing/validating performance test results or planning next optimization steps for the BeeGFS storage tuning project (方法论通用, Ceph 特定命令需替换为 beegfs). Covers the mandatory "verify test method before reading data" discipline, control-variable checks, data traceability/credibility red lines, cold/warm cache 口径 rules, and how to maintain the next-stage plan. Trigger on: 校验测试结果, 检查数据, 测试方法, 控制变量, 下一阶段计划, baseline, fullmatrix, results 复核, 数据可信度, perf review, planning.
 ---
 
 # 性能测试校验 & 工作规划 skill
+
+> **⚠️ 注意**: 本 skill 迁移自 JuiceFS+Ceph 项目。方法论(先看方法再看数据、控制变量、数据可信度红线、冷热态口径)通用,
+> 但文中具体命令/参数(ceph health、juicefs mount、--cache-size、EC 4+2 等)是 Ceph/JuiceFS 的,
+> 应用于 BeeGFS 时需替换为 `beegfs` 命令(见 TESTING-GUIDE.md)。下方"已知关键事实"段为 Ceph 项目特有, 仅供参考。
 
 负责"复核测试数据 + 规划下一步"的 agent 必读。本项目（JuiceFS+Ceph 单客户端调优）反复因
 "只看数值不看方法"踩坑（口径串了、变量失控、结论数对不上原始日志），本 skill 固化教训。

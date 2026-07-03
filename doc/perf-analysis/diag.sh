@@ -18,20 +18,26 @@ echo "========================================"
 # --- Layer 1: Disk ---
 echo ""
 echo "=== Layer 1: Disk ==="
-lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE | grep -E "disk|md|part" | grep -v loop
+lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE | grep -E "disk|part" | grep -v loop
 echo ""
-echo "/data mount:"
-df -h /data 2>/dev/null
+echo "beegfs mounts:"
+df -h /mnt/beegfs-meta /data/disk1 /data/disk2 2>/dev/null
 echo ""
-echo "NVMe smart (md0 members):"
+echo "NVMe devices:"
 for dev in /dev/nvme*n1; do
     [ -b "$dev" ] || continue
     echo "  $dev:"
     sudo smartctl -i "$dev" 2>/dev/null | grep -E "Model Number|Total NVM Capacity|Temperature" | head -3
 done
 echo ""
-echo "md0 detail:"
-sudo mdadm --detail /dev/md0 2>/dev/null | head -15
+echo "storage mounts (XFS):"
+for d in /data/disk1 /data/disk2; do
+    if mountpoint -q "$d" 2>/dev/null; then
+        echo "  $d: $(findmnt -no SOURCE,FSTYPE,OPTIONS "$d")"
+    else
+        echo "  $d: NOT MOUNTED"
+    fi
+done
 
 # --- Layer 2: Network ---
 echo ""
@@ -63,13 +69,18 @@ for svc in beegfs-mgmtd beegfs-meta beegfs-storage beegfs-client; do
 done
 echo ""
 echo "BeeGFS nodes:"
-sudo beegfs-ctl --listnodes --mgmtd_node="${BEEGFS_MGMTD}" 2>&1 || true
+# 8.x beegfs CLI 走 gRPC (端口 8010), TLS/auth 已禁用
+export BEEGFS_MGMTD_ADDR=${BEEGFS_MGMTD}:8010 BEEGFS_TLS_DISABLE=true BEEGFS_AUTH_DISABLE=true
+sudo -E beegfs node list 2>&1 || true
 echo ""
-echo "BeeGFS targets:"
-sudo beegfs-ctl --listtargets --nodetype=storage --mgmtd_node="${BEEGFS_MGMTD}" 2>&1 || true
+echo "BeeGFS targets (state):"
+sudo -E beegfs target list --state 2>&1 || true
 echo ""
-echo "BeeGFS df:"
-beegfs-df 2>&1 || true
+echo "BeeGFS mirror groups:"
+sudo -E beegfs mirror list 2>&1 || true
+echo ""
+echo "BeeGFS health df:"
+sudo -E beegfs health df 2>&1 || true
 
 # --- Layer 4: End-to-End ---
 echo ""

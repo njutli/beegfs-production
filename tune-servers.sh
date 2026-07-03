@@ -82,9 +82,9 @@ echo ">>> Sysctl tuning (per official docs)..."
 cat > /etc/sysctl.d/99-beegfs.conf <<'EOF'
 # === Per BeeGFS official storage tuning docs ===
 
-# Virtual memory
+# Virtual memory (per official storage tuning docs: 生产环境 5/10)
 vm.dirty_background_ratio = 5
-vm.dirty_ratio = 20
+vm.dirty_ratio = 10
 vm.vfs_cache_pressure = 50
 vm.min_free_kbytes = 262144
 vm.zone_reclaim_mode = 1
@@ -107,14 +107,13 @@ sysctl --system >/dev/null 2>&1
 echo "  Done."
 
 # ============================================================
-# 4. IO Scheduler — none for NVMe (kernel default), deadline for SSD
-#    BeeGFS官方建议 deadline，但 NVMe 设备内核强制使用 none
-#    对 NVMe 写 none 不影响实际效果，因为 NVMe 不需要 IO 调度
+# 4. IO Scheduler (per 官方 storage tuning 文档)
+#    官方建议 deadline; 但 NVMe 内核强制 'none' (NVMe 无需 IO 调度),
+#    故只对 sd* 设为 deadline, NVMe 保持 none。本环境全 NVMe, 实际为 none。
 # ============================================================
 
 echo ""
-echo ">>> Setting IO scheduler to deadline for non-NVMe devices..."
-echo "    NVMe devices use 'none' (kernel default, NVMe has no IO scheduler)"
+echo ">>> Setting IO scheduler: deadline for sd*, none for NVMe (kernel default)..."
 
 for disk in /sys/block/nvme*/queue/scheduler; do
     if [ -f "${disk}" ]; then
@@ -181,26 +180,23 @@ cat > /etc/rc.local <<'EOF'
 echo always > /sys/kernel/mm/transparent_hugepage/enabled
 echo always > /sys/kernel/mm/transparent_hugepage/defrag
 
-# VM settings
+# VM settings (per official: 生产 5/10)
 echo 5 > /proc/sys/vm/dirty_background_ratio
-echo 20 > /proc/sys/vm/dirty_ratio
+echo 10 > /proc/sys/vm/dirty_ratio
 echo 50 > /proc/sys/vm/vfs_cache_pressure
 echo 262144 > /proc/sys/vm/min_free_kbytes
 echo 1 > /proc/sys/vm/zone_reclaim_mode
 
-# IO scheduler and queue settings for storage devices
-# NVMe: kernel forces 'none', skip setting scheduler
+# IO scheduler: sd* 用 deadline (官方推荐); NVMe 内核强制 none, 不写调度器
 for dev in /sys/block/sd*; do
     [ -d "${dev}" ] || continue
-    devname=$(basename "${dev}")
-    [ "${devname}" = "sdX" ] && continue
     echo deadline > "${dev}/queue/scheduler" 2>/dev/null || true
 done
+# queue / read_ahead / max_sectors: 所有数据盘 (NVMe + sd, 跳过系统盘 nvme0n1)
 for dev in /sys/block/nvme* /sys/block/sd*; do
     [ -d "${dev}" ] || continue
     devname=$(basename "${dev}")
     [ "${devname}" = "nvme0n1" ] && continue
-    echo deadline > "${dev}/queue/scheduler" 2>/dev/null || true
     echo 4096 > "${dev}/queue/nr_requests" 2>/dev/null || true
     echo 4096 > "${dev}/queue/read_ahead_kb" 2>/dev/null || true
     echo 256 > "${dev}/queue/max_sectors_kb" 2>/dev/null || true
@@ -223,9 +219,9 @@ echo "Tuning complete (per official BeeGFS docs)."
 echo "========================================"
 echo ""
 echo "Changes applied:"
-echo "  - THP: always (ENABLED, opposite of Ceph)"
-echo "  - IO scheduler: deadline (not none)"
-echo "  - dirty_ratio: 5/20 (per official)"
+echo "  - THP: always (BeeGFS 推荐, 与 Ceph 相反)"
+echo "  - IO scheduler: deadline(sd*) / none(NVMe, 内核强制)"
+echo "  - dirty_ratio: 5/10 (per 官方生产建议)"
 echo "  - read_ahead: 4096KB"
 echo "  - CPU governor: performance"
 echo ""

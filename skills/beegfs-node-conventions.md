@@ -29,8 +29,8 @@ description: Use for ALL tasks involving file operations, cluster operations, or
 
 ### 架构说明
 
-- **Client (157)**: client + metadata 服务 (用 nvme1n1, ext4)
-- **Slave1 (150)**: mgmtd + meta + 2 storage targets
+- **Client (157)**: mgmtd + meta + client 服务 (用 nvme1n1, ext4)
+- **Slave1 (150)**: meta + 2 storage targets
 - **Slave2-3 (151-152)**: meta + 2 storage targets each
 - **镜像**: metadata 2 buddy groups + storage 3 buddy groups
 - **总计**: 4 metadata nodes + 6 storage targets
@@ -67,10 +67,10 @@ sshpass -p 'Sunrise@801' ssh -o StrictHostKeyChecking=no -p 19891 sunrise@203.15
 
 ## 网络
 
-| 接口             | 速率     | 网段          | 用途           |
-| ---------------- | -------- | ------------- | -------------- |
-| eno12399         | 10 GbE   | 10.20.1.0/24  | 管理网络       |
-| enp139s0f0np0    | 100 GbE  | 10.3.1.0/24   | 高速数据网络   |
+| 接口             | 速率     | 网段          | 用途                       |
+| ---------------- | -------- | ------------- | -------------------------- |
+| eno12399         | 10 GbE   | 10.20.1.0/24  | 管理网络 + **BeeGFS 数据通道** |
+| enp139s0f0np0    | 100 GbE  | 10.3.1.0/24   | 高速网络, 不用于 BeeGFS     |
 
 ## 文件操作规范
 
@@ -83,9 +83,9 @@ sshpass -p 'Sunrise@801' ssh -o StrictHostKeyChecking=no -p 19891 sunrise@203.15
 | 项目 | BeeGFS 官方建议 | 注意 |
 |------|----------------|------|
 | THP | **always** (启用) | 与 Ceph 项目相反 |
-| IO 调度器 | deadline | 非 none |
+| IO 调度器 | deadline(sd*)/none(NVMe) | NVMe 内核强制 none |
 | XFS 挂载 | noatime,logbufs=8,logbsize=256k,largeio,inode64,swalloc,allocsize=131072k | 官方推荐 |
-| dirty_ratio | 5/20 | 官方默认 |
+| dirty_ratio | 5/10 | 官方生产建议 |
 
 ## 目录结构
 

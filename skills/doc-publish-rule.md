@@ -1,5 +1,5 @@
 ---
-name: commit-publish-rule
+name: doc-publish-rule
 description: 所有文件修改（新建、编辑、删除），在提交推送前必须经过用户确认。不允许私自执行 git commit 和 git push。
 ---
 

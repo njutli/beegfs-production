@@ -92,16 +92,18 @@
 
 | 接口 | 速率 | 用途 |
 |------|------|------|
-| `eno12399` | 10 GbE | 管理网络 (10.20.1.0/24)，BeeGFS 通信 |
-| `enp139s0f0np0` | 100 GbE | 高速网络 (10.3.1.0/24)，可选用于 BeeGFS 数据通道 |
+| `eno12399` | 10 GbE | 管理网络 (10.20.1.0/24)，**BeeGFS 数据通道** |
+| `enp139s0f0np0` | 100 GbE | 高速网络 (10.3.1.0/24)，不用于 BeeGFS |
+
+性能对比测试时用 `limit-bandwidth.sh` 把 `eno12399` 限速到 1Gbps 模拟千兆环境。
 
 ## 调优 (per 官方文档)
 
 | 项目 | 官方建议 | 说明 |
 |------|---------|------|
 | THP | **always** (启用) | 与 Ceph 相反，BeeGFS 推荐 |
-| IO 调度器 | deadline | 非 none |
-| dirty_ratio | 5/20 | 官方默认 |
+| IO 调度器 | deadline(sd*)/none(NVMe) | NVMe 内核强制 none, 全 NVMe 环境实际为 none |
+| dirty_ratio | 5/10 | 官方生产建议 |
 | read_ahead | 4096KB | 官方推荐 |
 | XFS 挂载 | noatime,logbufs=8,logbsize=256k,largeio,inode64,swalloc,allocsize=131072k | 官方推荐 |
 | CPU governor | performance | 禁用节能 |
@@ -130,7 +132,7 @@ bash deploy-beegfs.sh test
 # 5. 调优 (per 官方文档)
 # 需要将 tune-servers.sh 传到每台 slave 上以 root 执行。
 # 例如 slave 150:
-#   ssh_to_slave 10.20.1.150 "cat > /tmp/tune-servers.sh" < tune-servers.sh
+#   scp_to tune-servers.sh 10.20.1.150 /tmp/tune-servers.sh
 #   ssh_to_slave 10.20.1.150 "sudo bash /tmp/tune-servers.sh"
 
 # 6. 基本读写测试
@@ -150,6 +152,7 @@ beegfs-production/
 ├── prepare-servers.sh         # 单机初始化
 ├── prepare-all-servers.sh     # 批量初始化
 ├── deploy-beegfs.sh           # BeeGFS 部署 (含镜像)
+├── clean-beegfs.sh            # 清理 (恢复未部署状态, 157 保守不碰业务)
 ├── tune-servers.sh            # 系统调优 (per 官方文档)
 ├── tests/                     # 测试脚本
 │   ├── lib/
