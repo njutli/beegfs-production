@@ -63,8 +63,8 @@ for ip in "${SLAVE_SERVERS[@]}"; do
     run_on "${ip}" "sudo systemctl stop beegfs-client beegfs-storage beegfs-meta 2>/dev/null || true"
     run_on "${ip}" "sudo systemctl disable beegfs-client beegfs-storage beegfs-meta 2>/dev/null || true"
     run_on "${ip}" "sudo systemctl reset-failed beegfs-client beegfs-storage beegfs-meta 2>/dev/null || true"
-    run_on "${ip}" "sudo rm -rf ${BEEGFS_META_DIR}"                     # meta 数据
-    run_on "${ip}" "sudo rm -rf ${BEEGFS_STORAGE_DIR_SLAVE_1}/* ${BEEGFS_STORAGE_DIR_SLAVE_2}/*"  # target format + 数据
+    run_on "${ip}" "sudo rm -rf ${BEEGFS_META_DIR}"                     # meta 数据 (整个目录删除)
+    run_on "${ip}" "sudo bash -c 'find ${BEEGFS_STORAGE_DIR_SLAVE_1} -mindepth 1 -delete; find ${BEEGFS_STORAGE_DIR_SLAVE_2} -mindepth 1 -delete'"  # target format + 数据 (含隐藏文件, 700权限需root glob)
     run_on "${ip}" "sudo rm -f ${BEEGFS_MGMTD_DB}* 2>/dev/null || true"
 done
 
