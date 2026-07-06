@@ -62,8 +62,7 @@ apply_limit() {
         for svc in beegfs-client beegfs-helperd beegfs-meta beegfs-mgmtd; do
             echo -n \"  restarting \${svc}...\"
             sudo timeout 45 systemctl stop \"\${svc}\" 2>/dev/null || {
-                sudo systemctl cancel \"\${svc}\" 2>/dev/null || true
-                sudo pkill -9 -f \"\${svc}\" 2>/dev/null || true
+                sudo systemctl kill -s SIGKILL \"\${svc}\" 2>/dev/null || true
                 sleep 2
             }
             sudo systemctl reset-failed \"\${svc}\" 2>/dev/null || true
@@ -79,7 +78,7 @@ apply_limit() {
 
         # 最终检查
         echo ''
-        local ok=0
+        ok=0
         for svc in beegfs-mgmtd beegfs-meta beegfs-helperd beegfs-client; do
             if sudo systemctl is-active --quiet \"\${svc}\" 2>/dev/null; then
                 echo \"  \${svc}: active\"
@@ -151,8 +150,7 @@ remove_limit() {
         for svc in beegfs-client beegfs-helperd beegfs-meta beegfs-mgmtd; do
             echo -n \"  restarting \${svc}...\"
             sudo timeout 45 systemctl stop \"\${svc}\" 2>/dev/null || {
-                sudo systemctl cancel \"\${svc}\" 2>/dev/null || true
-                sudo pkill -9 -f \"\${svc}\" 2>/dev/null || true
+                sudo systemctl kill -s SIGKILL \"\${svc}\" 2>/dev/null || true
                 sleep 2
             }
             sudo systemctl reset-failed \"\${svc}\" 2>/dev/null || true
