@@ -6,11 +6,10 @@
 
 | 文件 | 内容 |
 |------|------|
-| `01-measured-data.md` | 初始部署后的基线测量数据 |
-| `02-bottleneck-analysis.md` | 瓶颈分析（网络/磁盘/CPU/FUSE） |
-| `03-tuning-progress.md` | 调优进展总览 |
-| `04-next-steps.md` | 后续调优方向 |
-| `README.md` | 本文件 |
+| `01-beegfs-perf-tuning.md` | **现行单一文档**：调优基础(冷态基线) + 近期新发现 + 后续计划 |
+| `README.md` | 本文件（环境概况 + 参考基线） |
+
+> 各阶段的执行任务书在 `doc/perf-tasks/`；测试结果在 `results/<日期>-*/`。
 
 ## 环境概况
 
@@ -28,9 +27,9 @@
 - Metadata: nvme1n1 (894GB, ext4) — 独立盘，I/O 隔离
 - Storage: nvme2n1 + nvme3n1 (各 7TB, XFS) — 独立盘
 
-**网络**: 10 GbE (eno12399) + 100 GbE (enp139s0f0np0)
+**网络**: 数据面 100 GbE RDMA/RoCE (enp139s0f0np0/enp139s0f1np1, 10.3.x)；限速对比走独立 10 GbE 网卡 eno12409 (tc tbf 1gbit)；管理网 eno12399
 
-**调优 (per 官方文档)**:
+**调优 (per 官方文档，仅 3 个 slave 生效，157 保持默认保护 WekaIO 业务)**:
 - THP: always (启用，与 Ceph 相反)
 - IO 调度器: deadline
 - XFS 挂载: noatime,logbufs=8,logbsize=256k,largeio,inode64,swalloc,allocsize=131072k

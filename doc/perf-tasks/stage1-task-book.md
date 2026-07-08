@@ -3,6 +3,7 @@
 > 执行方：GLM（新会话 / 新服务商，**无历史上下文**，本任务书自包含）
 > 派发方：规划 agent
 > 依据：`doc/perf-analysis/02-stage0-review-and-revised-plan.md` §七 + `results/20260708-lock-rdma-iface/`
+> 注：原 01/02 分析文档已合并为 `doc/perf-analysis/01-beegfs-perf-tuning.md`（本任务书内容不变，作历史归档）。
 > 日期：2026-07-08
 > 优先级：P1（阶段0 与基线定案已完成，本任务是首个真正的调优阶段）
 

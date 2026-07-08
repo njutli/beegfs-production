@@ -2,6 +2,7 @@
 
 > 执行方：GLM
 > 派发方：规划 agent（依据 `doc/perf-analysis/01-bottleneck-and-tuning-plan.md` 阶段 0）
+> 注：原 01/02 分析文档已合并为 `doc/perf-analysis/01-beegfs-perf-tuning.md`（本任务书内容不变，作历史归档）。
 > 日期：2026-07-06
 > 优先级：**P0（阻塞项，后续所有调优阶段依赖本任务完成）**
 > 环境规范：见 `skills/beegfs-node-conventions.md`、测试纪律见 `skills/TESTING-GUIDE.md`、长测监控见 `skills/LONG-RUNNING-TEST-SKILL.md`
