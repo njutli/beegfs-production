@@ -88,13 +88,20 @@ log ""
     df -h "${MNT}"
     echo "### beegfs storage info"
     beegfs-df 2>&1 || true
-    echo "### beegfs nodes"
-    sudo beegfs-ctl --listnodes --nodetype=meta --mgmtd_node="${BEEGFS_MGMTD_HOST}" 2>&1 || true
-    sudo beegfs-ctl --listnodes --nodetype=storage --mgmtd_node="${BEEGFS_MGMTD_HOST}" 2>&1 || true
-    echo "### beegfs targets"
-    sudo beegfs-ctl --listtargets --nodetype=storage --mgmtd_node="${BEEGFS_MGMTD_HOST}" 2>&1 || true
+    echo "### beegfs nodes (meta)"
+    sudo beegfs-ctl --listnodes --nodetype=meta 2>&1 || true
+    echo "### beegfs nodes (storage)"
+    sudo beegfs-ctl --listnodes --nodetype=storage 2>&1 || true
+    echo "### beegfs targets (meta state)"
+    sudo beegfs-ctl --listtargets --state --nodetype=meta 2>&1 || true
+    echo "### beegfs targets (storage state)"
+    sudo beegfs-ctl --listtargets --state --nodetype=storage 2>&1 || true
+    echo "### beegfs mirror groups (meta)"
+    sudo beegfs-ctl --listmirrorgroups --nodetype=meta 2>&1 || true
+    echo "### beegfs mirror groups (storage)"
+    sudo beegfs-ctl --listmirrorgroups --nodetype=storage 2>&1 || true
     echo "### stripe pattern"
-    sudo beegfs-ctl --getentryinfo --entry="${MNT}" --mgmtd_node="${BEEGFS_MGMTD_HOST}" 2>&1 || true
+    sudo beegfs-ctl --getentryinfo --entry="${MNT}" 2>&1 || true
 } > "${OUTDIR}/env-snapshot.txt" 2>&1
 log "  env snapshot -> ${OUTDIR}/env-snapshot.txt"
 
@@ -108,7 +115,7 @@ bwget(){
     fi
     echo "${raw:-NA}"
 }
-iopsget(){ grep -oP "$2: IOPS=\K[0-9]+" "$1" | head -1 || true; }
+iopsget(){ local k=$(echo "$2" | tr 'A-Z' 'a-z'); grep -oP "${k}: IOPS=\K[0-9.]+[km]?" "$1" | head -1 || true; }
 
 drop_caches() {
     if [ "${DO_DROP}" = "1" ]; then

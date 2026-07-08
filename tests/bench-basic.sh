@@ -53,11 +53,18 @@ log ""
     mount | grep beegfs
     echo "### df"
     df -h "${MNT}"
-    echo "### beegfs nodes"
-    sudo beegfs-ctl --listnodes --nodetype=meta --mgmtd_node="${BEEGFS_MGMTD_HOST}" 2>&1 || true
-    sudo beegfs-ctl --listnodes --nodetype=storage --mgmtd_node="${BEEGFS_MGMTD_HOST}" 2>&1 || true
-    echo "### beegfs targets"
-    sudo beegfs-ctl --listtargets --nodetype=storage --mgmtd_node="${BEEGFS_MGMTD_HOST}" 2>&1 || true
+    echo "### beegfs nodes (meta)"
+    sudo beegfs-ctl --listnodes --nodetype=meta 2>&1 || true
+    echo "### beegfs nodes (storage)"
+    sudo beegfs-ctl --listnodes --nodetype=storage 2>&1 || true
+    echo "### beegfs targets (meta state)"
+    sudo beegfs-ctl --listtargets --state --nodetype=meta 2>&1 || true
+    echo "### beegfs targets (storage state)"
+    sudo beegfs-ctl --listtargets --state --nodetype=storage 2>&1 || true
+    echo "### beegfs mirror groups (meta)"
+    sudo beegfs-ctl --listmirrorgroups --nodetype=meta 2>&1 || true
+    echo "### beegfs mirror groups (storage)"
+    sudo beegfs-ctl --listmirrorgroups --nodetype=storage 2>&1 || true
 } > "${OUTDIR}/env-snapshot.txt" 2>&1
 log "  env snapshot -> ${OUTDIR}/env-snapshot.txt"
 
@@ -68,7 +75,7 @@ sync
 
 # 清客户端 + 全部 storage server 的 page cache
 drop_all_caches() {
-    drop_all_caches
+    sync; echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null 2>&1 || true
     for ip in ${SLAVE_SERVERS[*]}; do
         ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 "${SSH_USER}@${ip}" \
             "sync; echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null 2>&1" 2>/dev/null || true
