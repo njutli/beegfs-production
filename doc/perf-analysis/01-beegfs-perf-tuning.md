@@ -196,7 +196,7 @@
 | ② randwrite 6146 | A | 49.2% | Buddy Mirror 2× 写放大+NVMe 聚合 | 非镜像子目录 11520 vs 镜像 6545 = **1.76×** |
 | ③ randrw 4645/4641 | A | 37.1% | 读写竞争同一写天花板 | 随 randwrite 改善 |
 | ④ randread-64K 4766 | A | 38.1% | 小块 per-IO 固定开销 | IOPS×bs≈bw，64K IOPS 76k 但 bw 仅 4766（1M 的 0.41×） |
-| ⑤ seqwrite 53.3 | B | 45.0% | 单流+镜像双写+千兆 RTT 串行 | NIC 利用率 45%，链路未打满 |
+| ⑤ seqwrite 53.3 | B | 45.0% | 单流+镜像双写+千兆 RTT 串行 | NIC 利用率 45%（链路未打满）；且 client 侧 eno12409 实际流量≈53.2 MiB/s、有效数据占比≈99%（带宽未被协议/重传浪费，纯粹发不满链路） |
 
 > **测试 A（单流 NIC 利用率）**：口径 A 用 IB counters（`/sys/class/infiniband/mlx5_*/ports/*/counters/port_xmit_data|port_rcv_data`，4B 单位，multi-seqwrite 反推校准误差<5%）抓 3 slave 100GbE 速率，单流 6.7–11.7% 远 < 50%；口径 B 用 sar `-n DEV 1` 抓 4 节点 eno12409，单流 tx 45%、multi tx 96%。
 > **测试 B（写放大对照）**：建非镜像子目录（RAID0/chunk1M/numtargets=6，`beegfs-ctl --setpattern`，不动根 stripe），镜像 randwrite 6545 vs 非镜像 11520（1.76×≈2×），测后删除子目录。iostat 抓 3 slave 6 NVMe。
@@ -204,12 +204,19 @@
 
 **结论**：6 项未达标项瓶颈均已用直接实测证据坐实——**延迟主导（①①⑤）、写放大（②③）、小块开销（④）**，均非带宽不足或配置错误。
 
-### 阶段3（规划）：聚焦未达标的带宽主导项
+### 阶段3（结论）：无可执行优化项，全项结案
 
-依据 stage2 补测结论，有真实优化空间的项（区别于延迟主导、物理天花板的单流项）：
+stage2 已用直接实测坐实全部 6 项未达标项的瓶颈根因。在**三条安全红线**（不动 157 内核参数含 read_ahead / 不动 100GbE 网卡·驱动·RoCE QoS / 不动根目录 stripe）+ **不影响 WekaIO·K8s 业务** 的约束下，逐项复核后确认**没有可合法执行的优化手段**，阶段3 不再针对任何单项做优化测试：
 
-- **randwrite 写放大（49.2% → 提升）**：非镜像子目录对照已坐实 Buddy Mirror 2× 写放大（镜像 6545 vs 非镜像 11520，**1.76×**，逼近 6 NVMe 聚合上限）。stage3 可探索：关镜像对照（非生产态测上限）、chunksize/numtargets 对写放大的影响。**不改生产镜像配置，仅测量对照。**
-- **randread-64K 小块读（38.1% → 提升）**：IOPS×bs=bw 关系成立，per-IO 固定开销限制小块 bw（64K→1M 涨 2.2×）。stage3 可探索 slave 侧 read_ahead_kb（256/1024/8192）、chunksize 对小块读的影响。仍限 BeeGFS 应用层 / slave 端，不动网卡。
+| 未达标项 | 理论优化空间 | 在约束下是否可执行 | 结论 |
+|---|---|---|---|
+| ① 单流 seqread/seqwrite（A） | 无（延迟主导，物理天花板） | — | 结案；stage1 已 28 轮穷举无正收益 |
+| ⑤ 单流 seqwrite（B 千兆） | 无（QD1 串行，NIC 有效占比 99%） | — | 结案；纯发不满链路，且生产不跑单进程写 |
+| ③ randrw（A） | 无（派生于 randwrite 写天花板） | — | 结案；随 randwrite 走，无独立手段 |
+| ② randwrite（A，49.2%） | 有（关镜像可 ~翻倍） | **否** | 关镜像牺牲冗余（生产不可接受）；chunksize/numtargets 属根 stripe（红线）。**无合法手段，结案** |
+| ④ randread-64K（A，38.1%） | 有（read_ahead / chunksize） | **否** | read_ahead 属 157 内核参数（红线）；chunksize 属根 stripe（红线）；per-IO 固定开销为 FUSE+RDMA 栈固有。**无合法手段，结案** |
+
+> 唯二理论上有空间的 ② randwrite、④ randread-64K，其可能手段（关镜像 / read_ahead / chunksize / numtargets）无一例外触及安全红线或牺牲生产冗余，故在既定约束下**均不可执行**。阶段2 至此全项结案。
 
 ### 阶段4（可选）：暖态基线与业务对比
 
@@ -218,5 +225,6 @@
 ### 不再作为可调优项（有数据支撑，写入汇报）
 
 - **单流读/写（口径 A）**：延迟主导（clat 165–260µs，§2.2），stage2 补测坐实 NIC 利用率仅 6.7–11.7%（IB counters 实测，链路远未打满），换网卡/调应用层参数均无法提升占比，物理天花板。
-- **口径 B 单流 seqwrite（53.3）**：单流+镜像双写+千兆 RTT 串行，NIC 利用率 45%（sar 实测），千兆单流写固有特性（历史 58.8 亦低于 59）。
+- **口径 B 单流 seqwrite（53.3）**：单流+镜像双写+千兆 RTT 串行，NIC 利用率 45%（sar 实测），client 侧 eno12409 实际流量≈53.2 MiB/s、有效数据占比≈99%（链路未被协议开销浪费，纯粹单流发不满），千兆单流写固有特性（历史 58.8 亦低于 59），且生产不会是单进程 seqwrite。
+- **randwrite / randread-64K**：理论有空间但唯一可能手段（关镜像 / read_ahead / chunksize / numtargets）均触红线或牺牲冗余，不可执行（见阶段3）。
 - **157 共部署拆分**：0.6 已证当前负载下 157 共部署非瓶颈（BeeGFS 服务测试期间近 0% CPU）。默认不做。
