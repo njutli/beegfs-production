@@ -1,0 +1,73 @@
+### date: Tue Jul  7 12:48:37 +07 2026
+### hostname: oneasia-c1-cpu-node10
+### uname: Linux oneasia-c1-cpu-node10 5.15.0-170-generic #180-Ubuntu SMP Fri Jan 9 16:10:31 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+### memory
+               total        used        free      shared  buff/cache   available
+Mem:           1.0Ti       108Gi       887Gi       6.5Gi        10Gi       886Gi
+Swap:             0B          0B          0B
+### beegfs version
+BeeGFS Command-Line Control Tool (http://www.beegfs.com)
+### fio version
+fio-3.28
+### mount
+/dev/nvme1n1 on /mnt/beegfs-meta type ext4 (rw,relatime,stripe=32)
+beegfs_nodev on /mnt/beegfs type beegfs (rw,nosuid,relatime,cfgFile=/etc/beegfs/beegfs-client.conf,_netdev)
+### df
+Filesystem      Size  Used Avail Use% Mounted on
+beegfs_nodev     42T  300G   42T   1% /mnt/beegfs
+### beegfs storage info
+METADATA SERVERS:
+TargetID   Cap. Pool        Total         Free    %      ITotal       IFree    %
+========   =========        =====         ====    =      ======       =====    =
+       1      normal     879.1GiB     878.9GiB 100%       58.6M       58.5M 100%
+       2      normal     879.1GiB     878.9GiB 100%       58.6M       58.5M 100%
+       3      normal     879.1GiB     878.9GiB 100%       58.6M       58.5M 100%
+       4      normal     879.1GiB     878.9GiB 100%       58.6M       58.5M 100%
+
+STORAGE TARGETS:
+TargetID   Cap. Pool        Total         Free    %      ITotal       IFree    %
+========   =========        =====         ====    =      ======       =====    =
+    1011      normal    7152.0GiB    7102.1GiB  99%      750.1M      750.1M 100%
+    1012      normal    7152.0GiB    7102.1GiB  99%      750.1M      750.1M 100%
+    1021      normal    7152.0GiB    7102.1GiB  99%      750.1M      750.1M 100%
+    1022      normal    7152.0GiB    7102.1GiB  99%      750.1M      750.1M 100%
+    1031      normal    7152.0GiB    7102.1GiB  99%      750.1M      750.1M 100%
+    1032      normal    7152.0GiB    7102.1GiB  99%      750.1M      750.1M 100%
+### beegfs nodes (meta)
+oneasia-c1-cpu-node10 [ID: 1]
+beegfs-slave1 [ID: 2]
+beegfs-slave2 [ID: 3]
+beegfs-slave3 [ID: 4]
+### beegfs nodes (storage)
+beegfs-slave1 [ID: 101]
+beegfs-slave2 [ID: 102]
+beegfs-slave3 [ID: 103]
+### beegfs targets (meta state)
+TargetID     Reachability  Consistency   NodeID
+========     ============  ===========   ======
+       1           Online         Good        1
+       2           Online         Good        2
+       3           Online         Good        3
+       4           Online         Good        4
+### beegfs targets (storage state)
+TargetID     Reachability  Consistency   NodeID
+========     ============  ===========   ======
+    1011           Online         Good      101
+    1012           Online         Good      101
+    1021           Online         Good      102
+    1022           Online         Good      102
+    1031           Online         Good      103
+    1032           Online         Good      103
+### beegfs mirror groups (meta)
+     BuddyGroupID     PrimaryNodeID   SecondaryNodeID
+     ============     =============   ===============
+                1                 2                 3
+                2                 1                 4
+### beegfs mirror groups (storage)
+     BuddyGroupID   PrimaryTargetID SecondaryTargetID
+     ============   =============== =================
+              101              1011              1021
+              102              1012              1031
+              103              1022              1032
+### stripe pattern
+Stat failed: No such file or directory

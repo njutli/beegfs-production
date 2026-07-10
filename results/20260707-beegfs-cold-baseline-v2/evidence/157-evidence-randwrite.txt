@@ -1,0 +1,628 @@
+===== TEST: randwrite =====
+===== DATE: Mon Jul  6 18:33:39 +07 2026 =====
+===== HOST: oneasia-c1-cpu-node10 =====
+
+===== NETWORK BEFORE =====
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 11020294039437 9489603155    0    0    0     0          0         0 11020294039437 9489603155    0    0    0     0       0          0
+eno8303:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+eno12399: 379319256883564 257354634006    0 452390    0     0          0   6580575 39517276174661 68034176511    0    0    0     0       0          0
+enp139s0f0np0: 12388192873166 6889398463    0    0    0     0          0    454117 106882141  440051    0    0    0     0       0          0
+eno12409: 2793142077140 2045211712    0    0    0     0          0   6580581 1694398532934 1321964992    0    0    0     0       0          0
+eno8403:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+enp139s0f1np1: 12365600365837 6771983201    0    0    0     0          0    411306 27665540692918 18279345564    0    0    0     0       0          0
+br-51078ade5700:     168       6    0    0    0     0          0         0      926       9    0    0    0     0       0          0
+br-7341a1284b94:     168       6    0    0    0     0          0         0      706       7    0    0    0     0       0          0
+br-ed24e1b99f0e:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+docker0: 261884766152 801018558    0    0    0     0          0         0 730225814285 1309694557    0    0    0     0       0          0
+br-4f32caabb00c:      84       3    0    0    0     0          0         0      706       7    0    0    0     0       0          0
+veth31bbbae:     126       3    0    0    0     0          0         0 98113728  414638    0    0    0     0       0          0
+veth562c8bd:     126       3    0    0    0     0          0         0 98113910  414641    0    0    0     0       0          0
+cali96d9e092680: 4383462776 34863645    0    0    0     0          0         0 7530464990 47970533    0    0    0     0       0          0
+cali5c4961bf7a9:  237318    3393    0    0    0     0          0         0 99522184  411264    0    0    0     0       0          0
+caliece12277ee8: 5158339839 9326250    0    0    0     0          0         0 1910588819 5962368    0    0    0     0       0          0
+ tunl0: 5375538420 28905390    0    0    0     0          0         0 3142714260 19047682    0    1    0     0       0          0
+
+===== CPU CORES =====
+96
+===== LOAD BEFORE =====
+16.52 16.75 16.86 17/13550 3140864
+
+===== FIO STARTED (PID=3140865) =====
+
+===== TOP SAMPLE 1 (10s into fio) =====
+top - 18:33:49 up 142 days, 19:38, 2715 users,  load average: 34.37, 20.56, 18.1
+Tasks: 9955 total, 106 running, 9848 sleeping,   1 stopped,   0 zombie
+%Cpu(s): 13.2 us, 59.7 sy,  0.0 ni, 26.7 id,  0.0 wa,  0.0 hi,  0.4 si,  0.0 st
+MiB Mem : 1031555.+total, 341887.2 free, 115826.8 used, 573841.8 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used. 902507.4 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+3263748 root      20   0 9047092   2.1g 465056 R 110.3   0.2   9547:41 wekanode
+3263762 root      20   0 9047088   2.1g 466544 R 106.9   0.2   9545:39 wekanode
+3263766 root      20   0 9047088   2.1g 465116 R 106.9   0.2   9547:23 wekanode
+3263778 root      20   0 9620552   2.1g 465068 R 106.9   0.2   9506:11 wekanode
+3263784 root      20   0 9047092   2.1g 466472 R 106.9   0.2   9544:52 wekanode
+3263790 root      20   0 9620556   2.1g 464944 R 106.9   0.2   9515:32 wekanode
+3263796 root      20   0 9047088   2.1g 466544 R 106.9   0.2   9567:03 wekanode
+3263802 root      20   0 9047088   2.1g 464992 R 106.9   0.2   9547:08 wekanode
+3263808 root      20   0 9047088   2.1g 466472 R 106.9   0.2   9547:18 wekanode
+3263814 root      20   0 9620556   2.1g 466484 R 106.9   0.2   9516:31 wekanode
+3263826 root      20   0 9620556   2.1g 466560 R 106.9   0.2   9498:57 wekanode
+3263749 root      20   0 9047092   2.1g 465116 R 103.4   0.2   9512:24 wekanode
+3263760 root      20   0 9620556   2.1g 465000 R 103.4   0.2   9514:10 wekanode
+3263761 root      20   0 9620556   2.1g 466564 R 103.4   0.2   9512:07 wekanode
+3263772 root      20   0 9620552   2.1g 465072 R 103.4   0.2   9507:20 wekanode
+3263820 root      20   0 9620552   2.1g 466560 R 100.0   0.2   9515:10 wekanode
+3140984 sunrise   20   0  284228  40020   2340 R  65.5   0.0   0:06.04 fio
+3141001 sunrise   20   0  284296  39996   2316 R  65.5   0.0   0:06.09 fio
+
+===== TOP SAMPLE 2 (20s into fio) =====
+top - 18:34:00 up 142 days, 19:38, 2715 users,  load average: 50.37, 24.45, 19.3
+Tasks: 9953 total, 110 running, 9842 sleeping,   1 stopped,   0 zombie
+%Cpu(s): 13.5 us, 60.0 sy,  0.0 ni, 26.0 id,  0.0 wa,  0.0 hi,  0.5 si,  0.0 st
+MiB Mem : 1031555.+total, 341875.6 free, 115832.7 used, 573847.4 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used. 902501.4 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+3263760 root      20   0 9620556   2.1g 465000 R 103.4   0.2   9514:21 wekanode
+3263749 root      20   0 9047092   2.1g 465116 R 100.0   0.2   9512:34 wekanode
+3263766 root      20   0 9047088   2.1g 465116 R 100.0   0.2   9547:34 wekanode
+3263772 root      20   0 9620552   2.1g 465072 R 100.0   0.2   9507:31 wekanode
+3263778 root      20   0 9620552   2.1g 465068 R 100.0   0.2   9506:22 wekanode
+3263796 root      20   0 9047088   2.1g 466544 R 100.0   0.2   9567:14 wekanode
+3263808 root      20   0 9047088   2.1g 466472 R 100.0   0.2   9547:28 wekanode
+3263820 root      20   0 9620552   2.1g 466560 R 100.0   0.2   9515:21 wekanode
+3263826 root      20   0 9620556   2.1g 466560 R 100.0   0.2   9499:08 wekanode
+3263748 root      20   0 9047092   2.1g 465056 R  96.6   0.2   9547:52 wekanode
+3263761 root      20   0 9620556   2.1g 466564 R  96.6   0.2   9512:18 wekanode
+3263762 root      20   0 9047088   2.1g 466544 R  96.6   0.2   9545:49 wekanode
+3263784 root      20   0 9047092   2.1g 466472 R  96.6   0.2   9545:03 wekanode
+3263790 root      20   0 9620556   2.1g 464944 R  96.6   0.2   9515:43 wekanode
+3263802 root      20   0 9047088   2.1g 464992 R  96.6   0.2   9547:18 wekanode
+3263814 root      20   0 9620556   2.1g 466484 R  96.6   0.2   9516:42 wekanode
+3140975 sunrise   20   0  284192  39972   2292 R  65.5   0.0   0:12.54 fio
+3141013 sunrise   20   0  284344  40036   2356 R  65.5   0.0   0:12.49 fio
+
+===== TOP SAMPLE 3 (30s into fio) =====
+top - 18:34:10 up 142 days, 19:38, 2715 users,  load average: 63.60, 28.14, 20.6
+Tasks: 9949 total, 117 running, 9831 sleeping,   1 stopped,   0 zombie
+%Cpu(s): 13.7 us, 61.1 sy,  0.0 ni, 24.8 id,  0.0 wa,  0.0 hi,  0.4 si,  0.0 st
+MiB Mem : 1031555.+total, 341869.6 free, 115834.5 used, 573851.7 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used. 902499.7 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+3263748 root      20   0 9047092   2.1g 465056 R 100.0   0.2   9548:03 wekanode
+3263749 root      20   0 9047092   2.1g 465116 R 100.0   0.2   9512:45 wekanode
+3263760 root      20   0 9620556   2.1g 465000 R 100.0   0.2   9514:31 wekanode
+3263761 root      20   0 9620556   2.1g 466564 R 100.0   0.2   9512:29 wekanode
+3263772 root      20   0 9620552   2.1g 465072 R 100.0   0.2   9507:42 wekanode
+3263778 root      20   0 9620552   2.1g 465068 R 100.0   0.2   9506:32 wekanode
+3263784 root      20   0 9047092   2.1g 466472 R 100.0   0.2   9545:14 wekanode
+3263790 root      20   0 9620556   2.1g 464944 R 100.0   0.2   9515:54 wekanode
+3263796 root      20   0 9047088   2.1g 466544 R 100.0   0.2   9567:25 wekanode
+3263802 root      20   0 9047088   2.1g 464992 R 100.0   0.2   9547:29 wekanode
+3263808 root      20   0 9047088   2.1g 466472 R 100.0   0.2   9547:39 wekanode
+3263814 root      20   0 9620556   2.1g 466484 R 100.0   0.2   9516:52 wekanode
+3263820 root      20   0 9620552   2.1g 466560 R 100.0   0.2   9515:32 wekanode
+3263826 root      20   0 9620556   2.1g 466560 R 100.0   0.2   9499:18 wekanode
+3263762 root      20   0 9047088   2.1g 466544 R  96.6   0.2   9546:00 wekanode
+3263766 root      20   0 9047088   2.1g 465116 R  96.6   0.2   9547:45 wekanode
+3140965 sunrise   20   0  284152  39876   2196 D  65.5   0.0   0:19.05 fio
+3140979 sunrise   20   0  284208  40016   2336 S  65.5   0.0   0:18.98 fio
+
+===== NUMASTAT =====
+
+Per-node system memory usage (in MBs):
+Token SwapCached not in hash table.
+Token FileHugePages not in hash table.
+Token FilePmdMapped not in hash table.
+Token SwapCached not in hash table.
+Token FileHugePages not in hash table.
+Token FilePmdMapped not in hash table.
+                          Node 0          Node 1           Total
+                 --------------- --------------- ---------------
+MemTotal               515483.04       516072.75      1031555.79
+MemFree                  2343.50       339532.15       341875.66
+MemUsed                513139.54       176540.59       689680.13
+Active                   4314.96         2451.86         6766.82
+Inactive               467894.93       127934.43       595829.37
+Active(anon)               50.89           55.87          106.77
+Inactive(anon)          22067.34        28108.27        50175.61
+Active(file)             4264.07         2395.98         6660.05
+Inactive(file)         445827.59        99826.17       545653.76
+Unevictable             15290.43        18200.96        33491.38
+Mlocked                 15287.43        18200.97        33488.39
+Dirty                       0.33            2.88            3.20
+Writeback                   0.00            0.26            0.26
+FilePages              453426.84       106151.21       559578.05
+Mapped                   2183.07         2832.23         5015.30
+AnonPages               34073.65        42436.44        76510.09
+Shmem                    3341.34         3382.11         6723.45
+KernelStack               107.55          108.15          215.70
+PageTables                367.57          397.79          765.36
+NFS_Unstable                0.00            0.00            0.00
+
+===== PS TOP CPU (30s into fio) =====
+    PID COMMAND         %CPU %MEM PSR CMD
+3263796 wekanode         103  0.2   7 /weka/wekanode --slot 8 --container-name client
+3263748 wekanode         102  0.2  15 /weka/wekanode --slot 16 --container-name client
+3263762 wekanode         102  0.2  13 /weka/wekanode --slot 14 --container-name client
+3263766 wekanode         102  0.2   9 /weka/wekanode --slot 10 --container-name client
+3263784 wekanode         102  0.2   3 /weka/wekanode --slot 4 --container-name client
+3263802 wekanode         102  0.2  11 /weka/wekanode --slot 12 --container-name client
+3263808 wekanode         102  0.2   1 /weka/wekanode --slot 2 --container-name client
+3263790 wekanode         102  0.2   6 /weka/wekanode --slot 5 --container-name client
+3263814 wekanode         102  0.2   4 /weka/wekanode --slot 3 --container-name client
+3263749 wekanode         102  0.2   5 /weka/wekanode --slot 6 --container-name client
+3263760 wekanode         102  0.2  16 /weka/wekanode --slot 15 --container-name client
+3263761 wekanode         102  0.2  14 /weka/wekanode --slot 13 --container-name client
+3263772 wekanode         102  0.2   8 /weka/wekanode --slot 7 --container-name client
+3263820 wekanode         102  0.2   2 /weka/wekanode --slot 1 --container-name client
+3263778 wekanode         102  0.2  12 /weka/wekanode --slot 11 --container-name client
+3263826 wekanode         102  0.2  10 /weka/wekanode --slot 9 --container-name client
+3140982 fio             62.2  0.0  55 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140992 fio             62.1  0.0  43 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141001 fio             62.1  0.0  39 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141026 fio             62.1  0.0  85 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141085 fio             62.1  0.0  64 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141088 fio             62.1  0.0  40 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140972 fio             62.0  0.0 114 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140991 fio             62.0  0.0  89 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140998 fio             62.0  0.0 124 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141004 fio             62.0  0.0  47 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141011 fio             62.0  0.0 123 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141015 fio             62.0  0.0  37 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141028 fio             62.0  0.0  23 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+
+===== BEEGFS + FIO PROCESSES =====
+   1001 vfio-irqfd-clea  0.0  0.0 [vfio-irqfd-clea]
+ 294731 weka-retra-A00   0.0  0.0 [weka-retra-A00]
+ 294732 weka-aio-A00-0   0.0  0.0 [weka-aio-A00-0]
+ 294733 weka-aio-A00-1   0.0  0.0 [weka-aio-A00-1]
+ 294734 weka-reqfn-A00   0.0  0.0 [weka-reqfn-A00]
+ 294735 weka-retra-A01   0.0  0.0 [weka-retra-A01]
+ 294736 weka-aio-A01-0   0.0  0.0 [weka-aio-A01-0]
+ 294737 weka-aio-A01-1   0.0  0.0 [weka-aio-A01-1]
+ 294738 weka-reqfn-A01   0.0  0.0 [weka-reqfn-A01]
+ 294739 weka-retra-A02   0.0  0.0 [weka-retra-A02]
+ 294740 weka-aio-A02-0   0.0  0.0 [weka-aio-A02-0]
+ 294741 weka-aio-A02-1   0.0  0.0 [weka-aio-A02-1]
+ 294742 weka-reqfn-A02   0.0  0.0 [weka-reqfn-A02]
+ 294743 weka-retra-A03   0.0  0.0 [weka-retra-A03]
+ 294744 weka-aio-A03-0   0.0  0.0 [weka-aio-A03-0]
+ 294745 weka-aio-A03-1   0.0  0.0 [weka-aio-A03-1]
+ 294746 weka-reqfn-A03   0.0  0.0 [weka-reqfn-A03]
+ 294747 weka-retra-A04   0.0  0.0 [weka-retra-A04]
+ 294748 weka-aio-A04-0   0.0  0.0 [weka-aio-A04-0]
+ 294749 weka-aio-A04-1   0.0  0.0 [weka-aio-A04-1]
+ 294750 weka-reqfn-A04   0.0  0.0 [weka-reqfn-A04]
+ 294751 weka-retra-A05   0.0  0.0 [weka-retra-A05]
+ 294752 weka-aio-A05-0   0.0  0.0 [weka-aio-A05-0]
+ 294753 weka-aio-A05-1   0.0  0.0 [weka-aio-A05-1]
+ 294754 weka-reqfn-A05   0.1  0.0 [weka-reqfn-A05]
+ 294755 weka-retra-A06   0.0  0.0 [weka-retra-A06]
+ 294756 weka-aio-A06-0   0.0  0.0 [weka-aio-A06-0]
+ 294757 weka-aio-A06-1   0.0  0.0 [weka-aio-A06-1]
+ 294758 weka-reqfn-A06   0.1  0.0 [weka-reqfn-A06]
+ 294759 weka-retra-A07   0.0  0.0 [weka-retra-A07]
+ 294760 weka-aio-A07-0   0.0  0.0 [weka-aio-A07-0]
+ 294761 weka-aio-A07-1   0.0  0.0 [weka-aio-A07-1]
+ 294762 weka-reqfn-A07   0.0  0.0 [weka-reqfn-A07]
+ 294763 weka-retra-A08   0.0  0.0 [weka-retra-A08]
+ 294764 weka-aio-A08-0   0.0  0.0 [weka-aio-A08-0]
+ 294765 weka-aio-A08-1   0.0  0.0 [weka-aio-A08-1]
+ 294766 weka-reqfn-A08   0.0  0.0 [weka-reqfn-A08]
+ 294767 weka-retra-A09   0.0  0.0 [weka-retra-A09]
+ 294768 weka-aio-A09-0   0.0  0.0 [weka-aio-A09-0]
+ 294769 weka-aio-A09-1   0.0  0.0 [weka-aio-A09-1]
+ 294770 weka-reqfn-A09   0.0  0.0 [weka-reqfn-A09]
+ 294771 weka-retra-A10   0.0  0.0 [weka-retra-A10]
+ 294772 weka-aio-A10-0   0.0  0.0 [weka-aio-A10-0]
+ 294773 weka-aio-A10-1   0.0  0.0 [weka-aio-A10-1]
+ 294774 weka-reqfn-A10   0.1  0.0 [weka-reqfn-A10]
+ 294775 weka-retra-A11   0.0  0.0 [weka-retra-A11]
+ 294776 weka-aio-A11-0   0.0  0.0 [weka-aio-A11-0]
+ 294777 weka-aio-A11-1   0.0  0.0 [weka-aio-A11-1]
+ 294778 weka-reqfn-A11   0.0  0.0 [weka-reqfn-A11]
+ 294779 weka-retra-A12   0.0  0.0 [weka-retra-A12]
+ 294780 weka-aio-A12-0   0.0  0.0 [weka-aio-A12-0]
+ 294781 weka-aio-A12-1   0.0  0.0 [weka-aio-A12-1]
+ 294782 weka-reqfn-A12   0.0  0.0 [weka-reqfn-A12]
+ 294783 weka-retra-A13   0.0  0.0 [weka-retra-A13]
+ 294784 weka-aio-A13-0   0.0  0.0 [weka-aio-A13-0]
+ 294785 weka-aio-A13-1   0.0  0.0 [weka-aio-A13-1]
+ 294786 weka-reqfn-A13   0.0  0.0 [weka-reqfn-A13]
+ 294787 weka-retra-A14   0.0  0.0 [weka-retra-A14]
+ 294788 weka-aio-A14-0   0.0  0.0 [weka-aio-A14-0]
+ 294789 weka-aio-A14-1   0.0  0.0 [weka-aio-A14-1]
+ 294790 weka-reqfn-A14   0.0  0.0 [weka-reqfn-A14]
+ 294791 weka-retra-A15   0.0  0.0 [weka-retra-A15]
+ 294792 weka-aio-A15-0   0.0  0.0 [weka-aio-A15-0]
+ 294793 weka-aio-A15-1   0.0  0.0 [weka-aio-A15-1]
+ 294794 weka-reqfn-A15   0.0  0.0 [weka-reqfn-A15]
+2051520 atop             0.0  0.0 /usr/bin/atop -w /var/log/weka/atop.stats 600
+3140865 fio             11.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140964 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140965 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140966 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140967 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140968 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140969 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140970 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140971 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140972 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140973 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140974 fio             61.9  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140975 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140976 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140977 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140978 fio             62.0  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140979 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140980 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140981 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140982 fio             62.7  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140983 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140984 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140985 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140986 fio             62.0  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140987 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140988 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140989 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140990 fio             62.0  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140991 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140992 fio             62.7  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140993 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140994 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140995 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140996 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140997 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140998 fio             62.6  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3140999 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141000 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141001 fio             62.6  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141002 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141003 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141004 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141005 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141006 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141007 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141008 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141009 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141010 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141011 fio             62.6  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141012 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141013 fio             62.0  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141014 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141015 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141016 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141017 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141018 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141019 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141020 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141021 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141022 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141023 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141024 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141025 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141026 fio             62.7  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141027 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141028 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141029 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141030 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141031 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141032 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141033 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141034 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141035 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141036 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141037 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141038 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141039 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141040 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141041 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141042 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141043 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141044 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141045 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141046 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141047 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141048 fio             62.6  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141049 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141050 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141051 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141052 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141053 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141054 fio             61.8  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141055 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141056 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141057 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141058 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141059 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141060 fio             62.6  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141061 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141062 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141063 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141064 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141065 fio             62.6  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141066 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141067 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141068 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141069 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141070 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141071 fio             62.0  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141072 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141073 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141074 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141075 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141076 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141077 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141078 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141079 fio             62.1  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141080 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141081 fio             62.3  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141082 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141083 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141084 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141085 fio             62.6  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141086 fio             62.2  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141087 fio             62.4  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141088 fio             62.6  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141089 fio             62.0  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141090 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3141091 fio             62.5  0.0 fio --name=ev-randwrite --directory=/mnt/beegfs/evidence-test --rw=randwrite --bs=256K --filesize=256M --size=256M --numjobs=128 --ioengine=libaio --iodepth=128 --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
+3263072 weka             1.0  0.0 /usr/bin/weka --agent
+3263075 bash             0.0  0.0 bash -c cd /; ulimit -n 65535; exec > >(logger -t weka-agent-init) 2>&1; exec /usr/bin/weka --agent
+3263078 logger           0.0  0.0 logger -t weka-agent-init
+3263282 weka_init        0.0  0.0 /weka/weka_init /usr/local/bin/supervisord -n -c /etc/supervisord.conf
+3263309 events.py        0.0  0.0 /usr/local/bin/python3-weka /weka/scripts/events.py --rpcbind_register
+3263310 logger.py        0.0  0.0 /usr/local/bin/python3-weka /weka/scripts/logger.py
+3263312 shelld.py        0.0  0.0 /usr/local/bin/python3-weka /weka/scripts/shelld.py -p /var/run/shelld.sock -s
+3263313 trace-dumper     1.1  0.1 /weka/dumper/trace-dumper --histogram-interval 60
+3263314 trace-server     0.2  0.0 /weka/reader/trace-server --socket-address /var/run/trace-server.sock
+3263321 rotate_files.py  4.0  0.0 /usr/local/bin/python3-weka /weka/scripts/rotate_files.py
+3263551 wekanode        18.5  0.2 /weka/wekanode --slot 0 --container-name client
+3263748 wekanode         102  0.2 /weka/wekanode --slot 16 --container-name client
+3263749 wekanode         102  0.2 /weka/wekanode --slot 6 --container-name client
+3263760 wekanode         102  0.2 /weka/wekanode --slot 15 --container-name client
+3263761 wekanode         102  0.2 /weka/wekanode --slot 13 --container-name client
+3263762 wekanode         102  0.2 /weka/wekanode --slot 14 --container-name client
+3263766 wekanode         102  0.2 /weka/wekanode --slot 10 --container-name client
+3263772 wekanode         102  0.2 /weka/wekanode --slot 7 --container-name client
+3263778 wekanode         102  0.2 /weka/wekanode --slot 11 --container-name client
+3263784 wekanode         102  0.2 /weka/wekanode --slot 4 --container-name client
+3263790 wekanode         102  0.2 /weka/wekanode --slot 5 --container-name client
+3263796 wekanode         103  0.2 /weka/wekanode --slot 8 --container-name client
+3263802 wekanode         102  0.2 /weka/wekanode --slot 12 --container-name client
+3263808 wekanode         102  0.2 /weka/wekanode --slot 2 --container-name client
+3263814 wekanode         102  0.2 /weka/wekanode --slot 3 --container-name client
+3263820 wekanode         102  0.2 /weka/wekanode --slot 1 --container-name client
+3263826 wekanode         102  0.2 /weka/wekanode --slot 9 --container-name client
+3308170 beegfs/flush     0.0  0.0 [beegfs/flush]
+3308171 beegfs-rwPgWQ    0.0  0.0 [beegfs-rwPgWQ]
+3308196 beegfs_DGramLis  0.0  0.0 [beegfs_DGramLis]
+3308197 beegfs_XNodeSyn  0.0  0.0 [beegfs_XNodeSyn]
+3308198 beegfs_AckMgr    0.0  0.0 [beegfs_AckMgr]
+3308199 beegfs_Flusher   0.0  0.0 [beegfs_Flusher]
+3308221 beegfs-helperd/  0.0  0.0 /opt/beegfs/sbin/beegfs-helperd cfgFile=/etc/beegfs/beegfs-helperd.conf runDaemonized=false
+3308236 beegfs-meta/Mai  0.0  0.0 /opt/beegfs/sbin/beegfs-meta cfgFile=/etc/beegfs/beegfs-meta.conf runDaemonized=false
+3310244 beegfs-mgmtd/Ma  0.0  0.0 /opt/beegfs/sbin/beegfs-mgmtd cfgFile=/etc/beegfs/beegfs-mgmtd.conf runDaemonized=false
+
+===== NETWORK AFTER (40s into fio) =====
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 11020320482079 9489623938    0    0    0     0          0         0 11020320482079 9489623938    0    0    0     0       0          0
+eno8303:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+eno12399: 379319257431310 257354636290    0 452390    0     0          0   6580592 39517276605802 68034178768    0    0    0     0       0          0
+enp139s0f0np0: 12388196551504 6889403543    0    0    0     0          0    454119 106882381  440052    0    0    0     0       0          0
+eno12409: 2793142086376 2045211814    0    0    0     0          0   6580598 1694398536347 1321965018    0    0    0     0       0          0
+eno8403:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+enp139s0f1np1: 12365604226450 6771986882    0    0    0     0          0    411307 27665779147022 18279446813    0    0    0     0       0          0
+br-51078ade5700:     168       6    0    0    0     0          0         0      926       9    0    0    0     0       0          0
+br-7341a1284b94:     168       6    0    0    0     0          0         0      706       7    0    0    0     0       0          0
+br-ed24e1b99f0e:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+docker0: 261884766152 801018558    0    0    0     0          0         0 730225814285 1309694557    0    0    0     0       0          0
+br-4f32caabb00c:      84       3    0    0    0     0          0         0      706       7    0    0    0     0       0          0
+veth31bbbae:     126       3    0    0    0     0          0         0 98113966  414639    0    0    0     0       0          0
+veth562c8bd:     126       3    0    0    0     0          0         0 98114148  414642    0    0    0     0       0          0
+cali96d9e092680: 4383473808 34863732    0    0    0     0          0         0 7530484269 47970655    0    0    0     0       0          0
+cali5c4961bf7a9:  237318    3393    0    0    0     0          0         0 99522426  411265    0    0    0     0       0          0
+caliece12277ee8: 5158339979 9326252    0    0    0     0          0         0 1910589181 5962371    0    0    0     0       0          0
+ tunl0: 5375552248 28905464    0    0    0     0          0         0 3142720132 19047724    0    1    0     0       0          0
+
+===== SS SUMMARY =====
+Total: 15777
+TCP:   2459 (estab 2206, closed 176, orphaned 35, timewait 168)
+
+Transport Total     IP        IPv6
+RAW	  5         1         4        
+UDP	  57        56        1        
+TCP	  2283      2265      18       
+INET	  2345      2322      23       
+FRAG	  0         0         0        
+
+
+===== SS BEEGFS CONNECTIONS =====
+ESTAB      0      0              172.29.218.0:8008          172.29.218.0:59806                                 
+ESTAB      0      0              10.114.1.157:8008          10.114.1.151:41176                                 
+ESTAB      0      0              172.29.218.0:39348         172.29.218.0:8008                                  
+ESTAB      0      0              10.114.1.157:8008          10.114.1.150:50508                                 
+ESTAB      0      0              10.114.1.157:8008          10.114.1.150:50518                                 
+ESTAB      0      0              10.114.1.157:8008          10.114.1.152:34574                                 
+ESTAB      0      0              10.114.1.157:8008          10.114.1.152:34558                                 
+ESTAB      0      0              172.29.218.0:8008          172.29.218.0:39348                                 
+ESTAB      0      0              172.29.218.0:59806         172.29.218.0:8008                                  
+ESTAB      0      0              10.114.1.157:8008          10.114.1.151:41160                                 
+ESTAB      0      0               10.20.1.157:22             10.20.1.160:48004                                 
+
+===== WAITING FOR FIO TO FINISH =====
+FIO exit code: 0
+
+===== LOAD AFTER =====
+90.45 38.09 24.19 17/13547 3142112
+
+===== FIO RESULT =====
+ev-randwrite: (g=0): rw=randwrite, bs=(R) 256KiB-256KiB, (W) 256KiB-256KiB, (T) 256KiB-256KiB, ioengine=libaio, iodepth=128
+...
+fio-3.28
+Starting 128 processes
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+ev-randwrite: Laying out IO file (1 file / 256MiB)
+
+ev-randwrite: (groupid=0, jobs=128): err= 0: pid=3140964: Mon Jul  6 18:34:40 2026
+  write: IOPS=24.9k, BW=6236MiB/s (6539MB/s)(366GiB/60021msec); 0 zone resets
+    slat (usec): min=199, max=107144, avg=5127.19, stdev=6661.45
+    clat (nsec): min=1599, max=1106.2M, avg=647070064.75, stdev=86265532.22
+     lat (usec): min=302, max=1112.2k, avg=652197.74, stdev=86543.25
+    clat percentiles (msec):
+     |  1.00th=[  456],  5.00th=[  523], 10.00th=[  550], 20.00th=[  584],
+     | 30.00th=[  609], 40.00th=[  625], 50.00th=[  651], 60.00th=[  667],
+     | 70.00th=[  684], 80.00th=[  718], 90.00th=[  751], 95.00th=[  785],
+     | 99.00th=[  844], 99.50th=[  869], 99.90th=[  919], 99.95th=[  944],
+     | 99.99th=[  995]
+   bw (  MiB/s): min= 3182, max= 8526, per=99.86%, avg=6227.13, stdev= 6.92, samples=15103
+   iops        : min=12730, max=34106, avg=24908.51, stdev=27.67, samples=15103
+  lat (usec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 500=0.01%
+  lat (usec)   : 750=0.01%, 1000=0.01%
+  lat (msec)   : 2=0.01%, 4=0.01%, 10=0.02%, 20=0.02%, 50=0.05%
+  lat (msec)   : 100=0.08%, 250=0.25%, 500=2.27%, 750=87.26%, 1000=10.02%
+  lat (msec)   : 2000=0.01%
+  cpu          : usr=0.36%, sys=61.40%, ctx=28911853, majf=0, minf=8109930
+  IO depths    : 1=0.1%, 2=0.1%, 4=0.1%, 8=0.1%, 16=0.1%, 32=0.3%, >=64=99.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=0,1497088,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+  WRITE: bw=6236MiB/s (6539MB/s), 6236MiB/s-6236MiB/s (6539MB/s-6539MB/s), io=366GiB (392GB), run=60021-60021msec
+
+===== CLEANUP DONE =====
+===== END: Mon Jul  6 18:34:40 +07 2026 =====

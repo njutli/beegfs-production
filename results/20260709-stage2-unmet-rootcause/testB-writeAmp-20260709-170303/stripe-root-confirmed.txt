@@ -1,0 +1,4 @@
+### root getentryinfo (positional, Buddy Mirror confirmed)
++ Type: Buddy Mirror
++ Chunksize: 1M
++ Number of storage targets: desired: 3

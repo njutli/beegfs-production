@@ -1,0 +1,54 @@
+===== Preparing 4G test file (bs=256K, direct=1) =====
+Prep done.
+
+===== Experiment 1: 5 consecutive cold seqread (drop_all_caches before each) =====
+
+  [drop] client+slaves... OK
+--- cold-r1 ---
+  bw=1620 MiB/s  IOPS=6478  clat_min=119us
+
+  [drop] client+slaves... OK
+--- cold-r2 ---
+  bw=1489 MiB/s  IOPS=5955  clat_min=122us
+
+  [drop] client+slaves... OK
+--- cold-r3 ---
+  bw=1510 MiB/s  IOPS=6041  clat_min=122us
+
+  [drop] client+slaves... OK
+--- cold-r4 ---
+  bw=1591 MiB/s  IOPS=6365  clat_min=114us
+
+  [drop] client+slaves... OK
+--- cold-r5 ---
+  bw=1623 MiB/s  IOPS=6493  clat_min=96us
+
+===== Experiment 2: warmup-then-drop =====
+
+--- Warmup run (warm-r1, NO drop before — but after cold-r5) ---
+--- warm-r1 ---
+  bw=1493 MiB/s  IOPS=5970  clat_min=121us
+
+--- Cold after warmup (cold-after-warm, drop_all_caches) ---
+  [drop] client+slaves... OK
+--- cold-after-warm ---
+  bw=1569 MiB/s  IOPS=6277  clat_min=119us
+
+--- Warm again (warm-r2, NO drop) ---
+--- warm-r2 ---
+  bw=1590 MiB/s  IOPS=6360  clat_min=123us
+
+
+===== SUMMARY =====
+label                bw(MiB/s)    IOPS
+---------------------------------------
+cold-r1                    1620   6478
+cold-r2                    1489   5955
+cold-r3                    1510   6041
+cold-r4                    1591   6365
+cold-r5                    1623   6493
+warm-r1                    1493   5970
+cold-after-warm            1569   6277
+warm-r2                    1590   6360
+
+===== Cleanup done =====

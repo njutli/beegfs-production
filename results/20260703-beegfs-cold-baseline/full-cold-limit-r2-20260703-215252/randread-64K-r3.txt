@@ -1,0 +1,34 @@
+# randread-64K round 3: rw=randread bs=64K iodepth=128 numjobs=128 direct=1 runtime=60s
+# mode: cold, extra: 
+# date: Fri Jul  3 22:54:02 +07 2026
+storage_test: (g=0): rw=randread, bs=(R) 64.0KiB-64.0KiB, (W) 64.0KiB-64.0KiB, (T) 64.0KiB-64.0KiB, ioengine=libaio, iodepth=128
+...
+fio-3.28
+Starting 128 processes
+
+storage_test: (groupid=0, jobs=128): err= 0: pid=3280838: Fri Jul  3 22:55:03 2026
+  read: IOPS=5428, BW=339MiB/s (356MB/s)(19.9GiB/60058msec)
+    slat (usec): min=487, max=1600.2k, avg=23544.32, stdev=46480.34
+    clat (nsec): min=1820, max=6067.3M, avg=2916678020.04, stdev=647449593.80
+     lat (msec): min=2, max=6102, avg=2940.22, stdev=649.16
+    clat percentiles (msec):
+     |  1.00th=[  600],  5.00th=[ 1955], 10.00th=[ 2232], 20.00th=[ 2500],
+     | 30.00th=[ 2668], 40.00th=[ 2802], 50.00th=[ 2937], 60.00th=[ 3037],
+     | 70.00th=[ 3205], 80.00th=[ 3373], 90.00th=[ 3675], 95.00th=[ 3910],
+     | 99.00th=[ 4463], 99.50th=[ 4665], 99.90th=[ 5134], 99.95th=[ 5269],
+     | 99.99th=[ 5738]
+   bw (  KiB/s): min=37376, max=789814, per=100.00%, avg=349170.85, stdev=1100.43, samples=14487
+   iops        : min=  584, max=12340, avg=5455.71, stdev=17.19, samples=14487
+  lat (usec)   : 2=0.01%, 4=0.03%, 10=0.01%, 20=0.01%
+  lat (msec)   : 4=0.01%, 10=0.01%, 20=0.01%, 50=0.04%, 100=0.08%
+  lat (msec)   : 250=0.24%, 500=0.42%, 750=0.41%, 1000=0.42%, 2000=3.95%
+  lat (msec)   : >=2000=94.38%
+  cpu          : usr=0.01%, sys=6.46%, ctx=13671533, majf=3, minf=508161
+  IO depths    : 1=0.1%, 2=0.1%, 4=0.2%, 8=0.3%, 16=0.6%, 32=1.3%, >=64=97.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=326015,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+   READ: bw=339MiB/s (356MB/s), 339MiB/s-339MiB/s (356MB/s-356MB/s), io=19.9GiB (21.4GB), run=60058-60058msec

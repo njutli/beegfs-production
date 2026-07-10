@@ -1,0 +1,43 @@
+### beegfs-net (RDMA restored)
+
+mgmt_nodes
+=============
+oneasia-c1-cpu-node10 [ID: 1]
+   Connections: TCP: 1 (172.29.218.0:8008); 
+
+meta_nodes
+=============
+oneasia-c1-cpu-node10 [ID: 1]
+   Connections: RDMA: 1 (10.3.1.13:8005); 
+beegfs-slave1 [ID: 2]
+   Connections: <none>
+beegfs-slave2 [ID: 3]
+   Connections: <none>
+beegfs-slave3 [ID: 4]
+   Connections: <none>
+
+storage_nodes
+=============
+beegfs-slave1 [ID: 101]
+   Connections: RDMA: 2 (10.3.1.6:8003); 
+beegfs-slave2 [ID: 102]
+   Connections: RDMA: 2 (10.3.1.7:8003); 
+beegfs-slave3 [ID: 103]
+   Connections: RDMA: 2 (10.3.1.8:8003); 
+
+
+### connUseRDMA/connIF
+connUseRDMA                  = true
+enp139s0f0np0
+enp139s0f1np1
+### tc (expect clean)
+clean
+### targets
+TargetID     Reachability  Consistency   NodeID
+========     ============  ===========   ======
+    1011           Online         Good      101
+    1012           Online         Good      101
+    1021           Online         Good      102
+    1022           Online         Good      102
+    1031           Online         Good      103
+    1032           Online         Good      103

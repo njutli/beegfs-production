@@ -1,0 +1,10 @@
+### date: Thu Jul  9 17:03:04 +07 2026
+### root getentryinfo (Buddy Mirror)
+Stat failed: No such file or directory
+### nomirror-test getentryinfo (before setpattern)
+Stat failed: No such file or directory
+New chunksize: 1048576
+New number of storage targets: 6
+
+### nomirror-test getentryinfo (after setpattern, confirm RAID0)
+Stat failed: No such file or directory

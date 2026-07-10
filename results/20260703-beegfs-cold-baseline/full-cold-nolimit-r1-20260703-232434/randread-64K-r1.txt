@@ -1,0 +1,34 @@
+# randread-64K round 1: rw=randread bs=64K iodepth=128 numjobs=128 direct=1 runtime=60s
+# mode: cold, extra: 
+# date: Fri Jul  3 23:40:49 +07 2026
+storage_test: (g=0): rw=randread, bs=(R) 64.0KiB-64.0KiB, (W) 64.0KiB-64.0KiB, (T) 64.0KiB-64.0KiB, ioengine=libaio, iodepth=128
+...
+fio-3.28
+Starting 128 processes
+
+storage_test: (groupid=0, jobs=128): err= 0: pid=3327610: Fri Jul  3 23:41:49 2026
+  read: IOPS=79.0k, BW=4938MiB/s (5178MB/s)(289GiB/60010msec)
+    slat (usec): min=149, max=67213, avg=1617.98, stdev=2910.13
+    clat (nsec): min=1836, max=433201k, avg=205448657.20, stdev=46822813.53
+     lat (usec): min=183, max=450814, avg=207067.03, stdev=47089.55
+    clat percentiles (msec):
+     |  1.00th=[  126],  5.00th=[  138], 10.00th=[  146], 20.00th=[  159],
+     | 30.00th=[  174], 40.00th=[  190], 50.00th=[  207], 60.00th=[  220],
+     | 70.00th=[  232], 80.00th=[  247], 90.00th=[  268], 95.00th=[  284],
+     | 99.00th=[  317], 99.50th=[  330], 99.90th=[  355], 99.95th=[  363],
+     | 99.99th=[  384]
+   bw (  MiB/s): min= 3278, max= 7366, per=99.75%, avg=4925.45, stdev= 7.64, samples=15232
+   iops        : min=52454, max=117866, avg=78807.14, stdev=122.25, samples=15232
+  lat (usec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.01%
+  lat (usec)   : 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%
+  lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.02%, 50=0.05%
+  lat (msec)   : 100=0.08%, 250=81.80%, 500=18.04%
+  cpu          : usr=0.15%, sys=63.89%, ctx=34320974, majf=2, minf=5157898
+  IO depths    : 1=0.1%, 2=0.1%, 4=0.1%, 8=0.1%, 16=0.1%, 32=0.1%, >=64=99.8%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=4740970,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+   READ: bw=4938MiB/s (5178MB/s), 4938MiB/s-4938MiB/s (5178MB/s-5178MB/s), io=289GiB (311GB), run=60010-60010msec

@@ -1,0 +1,24 @@
+### stage2B round1 evidence — 千兆限速口径 (BIDIRECTIONAL tc: 157 + 3 slaves eno12409 egress)
+### date: Wed Jul  8 16:57:20 +07 2026
+### rationale: task book §3.2 spec is slave-only, but that leaves write data path (client->slave) uncapped,
+### giving inflated writes (multi-seqwrite=170). Historical baseline (58.8/113) & JuiceFS 1gbit comparison
+### require bidirectional cap. 157 eno12409 has no business listeners (verified), isolated from WekaIO.
+### config: connUseRDMA=false, connInterfacesFile=eno12409 (4 nodes)
+connInterfacesFile            = /etc/beegfs/connInterfacesFile.conf
+connUseRDMA                  = false
+### beegfs-net (TCP 10.114.1.x):
+storage_nodes
+=============
+beegfs-slave1 [ID: 101]
+   Connections: TCP: 2 (10.114.1.150:8003); 
+beegfs-slave2 [ID: 102]
+   Connections: TCP: 12 (10.114.1.151:8003); 
+beegfs-slave3 [ID: 103]
+   Connections: TCP: 9 (10.114.1.152:8003); 
+
+### tc qdisc (4 nodes eno12409):
+  157: tbf
+  10.20.1.150: tbf
+  10.20.1.151: tbf
+  10.20.1.152: tbf
+### bidirectional sentinel seqwrite: bw=53.5 MiB/s, clat avg=4666us (matches historical 58.8)

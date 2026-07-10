@@ -1,0 +1,261 @@
+############################################################
+# Snapshot: hourly-h7
+# Date: Tue Jul  7 22:27:53 +07 2026
+############################################################
+
+======================================================
+=== 157 (client) ===
+======================================================
+
+--- date / uptime / load ---
+Tue Jul  7 22:27:53 +07 2026
+ 22:27:53 up 143 days, 23:32, 2753 users,  load average: 18.37, 17.92, 17.93
+
+--- free -g ---
+               total        used        free      shared  buff/cache   available
+Mem:            1007         101         362           6         543         893
+Swap:              0           0           0
+
+--- ibstat (port state/rate) ---
+CA 'mlx5_0'
+	CA type: MT4125
+	Number of ports: 1
+	Firmware version: 22.41.1000
+	Hardware version: 0
+	Node GUID: 0xe09d7303003b1950
+	System image GUID: 0xe09d7303003b1950
+	Port 1:
+		State: Active
+		Physical state: LinkUp
+		Rate: 100
+		Base lid: 0
+		LMC: 0
+		SM lid: 0
+		Capability mask: 0x00010000
+		Port GUID: 0xe29d73fffe3b1950
+		Link layer: Ethernet
+CA 'mlx5_1'
+	CA type: MT4125
+	Number of ports: 1
+	Firmware version: 22.41.1000
+	Hardware version: 0
+	Node GUID: 0xe09d7303003b1951
+	System image GUID: 0xe09d7303003b1950
+	Port 1:
+		State: Active
+		Physical state: LinkUp
+		Rate: 100
+		Base lid: 0
+		LMC: 0
+		SM lid: 0
+		Capability mask: 0x00010000
+		Port GUID: 0xe29d73fffe3b1951
+		Link layer: Ethernet
+
+--- RDMA error counters (mlx5_0 + mlx5_1) ---
+  mlx5_0 port 1:
+    port_xmit_discards: 0
+    port_xmit_wait: 0
+    port_rcv_errors: 0
+    port_xmit_retransmits: N/A
+  mlx5_1 port 1:
+    port_xmit_discards: 0
+    port_xmit_wait: 0
+    port_rcv_errors: 0
+    port_xmit_retransmits: N/A
+
+--- RDMA data rate (5s delta, mlx5_1) ---
+  port_rcv_data: 8876633605201 -> 8876633605201 (delta 0 B/s = 0 MiB/s)
+  port_xmit_data: 2491432950562 -> 2491432950562 (delta 0 B/s = 0 MiB/s)
+  (WekaIO RDMA 流量旁证: 若 rcv+xmt > 0 说明 WekaIO 在跑)
+
+--- beegfs-net (client 连接到 servers) ---
+
+mgmt_nodes
+=============
+oneasia-c1-cpu-node10 [ID: 1]
+   Connections: TCP: 1 (172.29.218.0:8008); 
+
+meta_nodes
+=============
+oneasia-c1-cpu-node10 [ID: 1]
+   Connections: RDMA: 1 (10.3.2.13:8005); 
+beegfs-slave1 [ID: 2]
+   Connections: <none>
+beegfs-slave2 [ID: 3]
+   Connections: <none>
+beegfs-slave3 [ID: 4]
+   Connections: <none>
+
+storage_nodes
+=============
+beegfs-slave1 [ID: 101]
+   Connections: RDMA: 2 (10.3.2.6:8003); 
+beegfs-slave2 [ID: 102]
+   Connections: RDMA: 2 (10.3.2.7:8003); 
+beegfs-slave3 [ID: 103]
+   Connections: RDMA: 2 (10.3.2.8:8003); 
+
+
+
+--- BeeGFS 服务运行时长 (157) ---
+  beegfs-mgmtd: active since Tue 2026-07-07 16:22:06 +07
+  beegfs-meta: active since Tue 2026-07-07 16:22:06 +07
+  beegfs-helperd: active since Mon 2026-07-06 20:23:31 +07
+  beegfs-client: active since Tue 2026-07-07 16:23:14 +07
+
+--- /proc/buddyinfo (内存碎片, 157) ---
+Node 0, zone      DMA      0      0      0      0      0      0      0      0      1      1      2 
+Node 0, zone    DMA32      3      2      5      4      4      3      3      4      4      2    366 
+Node 0, zone   Normal  15149  13467   9788   3833   1824    362     35    199     90     27      2 
+Node 1, zone   Normal  19916   6276 2567298 1993860 908114 326968  89204  28953  14860  12074  23273 
+
+--- meminfo THP (157) ---
+AnonHugePages:     92160 kB
+ShmemHugePages:        0 kB
+FileHugePages:         0 kB
+HugePages_Total:   11280
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+
+======================================================
+=== slave 10.20.1.150 ===
+======================================================
+
+--- date / uptime / load ---
+Tue Jul  7 22:27:58 +07 2026
+ 22:27:58 up 13 days,  8:17,  5 users,  load average: 0.00, 0.02, 0.02
+
+--- free -g ---
+               total        used        free      shared  buff/cache   available
+Mem:            1007           9         997           0           0         994
+Swap:              0           0           0
+
+--- BeeGFS 服务运行时长 ---
+  beegfs-storage: active since Tue 2026-07-07 16:18:52 +07
+  beegfs-meta: active since Tue 2026-07-07 16:18:52 +07
+
+--- beegfs-net (storage 侧连接) ---
+
+--- iostat NVMe (1s x2, 取第二采样) ---
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util
+nvme2n1         28.60   5320.53     0.00   0.00    0.35   186.06   11.91   3173.53     0.00   0.01    0.20   266.37    0.10  19462.58     0.00   0.00    4.66 187204.43    0.00    0.00    0.01   1.04
+nvme3n1         28.55   5313.27     0.00   0.00    0.35   186.13   11.92   3173.12     0.00   0.01    0.20   266.26    0.10  19463.38     0.00   0.00    4.73 187182.42    0.00    0.00    0.01   1.04
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util
+nvme2n1          0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00    0.00    0.00   0.00
+nvme3n1          0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00    0.00    0.00   0.00
+
+--- beegfs-storage 线程数 ---
+  (beegfs-storage process not found)
+
+--- /proc/buddyinfo (内存碎片) ---
+Node 0, zone      DMA      0      0      0      0      0      0      0      0      1      1      2 
+Node 0, zone    DMA32      3      7      7      6      6      7      5      8      4      4    364 
+Node 0, zone   Normal  37850  12219   8797  15813  11709   7126   3438   1757   1138    763 125917 
+Node 1, zone   Normal  49267  23591  19110  18366  12792   7141   3349   1469    675     53 126042 
+
+--- meminfo THP ---
+AnonHugePages:   1746944 kB
+ShmemHugePages:        0 kB
+FileHugePages:         0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+
+======================================================
+=== slave 10.20.1.151 ===
+======================================================
+
+--- date / uptime / load ---
+Tue Jul  7 15:28:00 UTC 2026
+ 15:28:00 up 12 days, 11:17,  5 users,  load average: 0.00, 0.00, 0.00
+
+--- free -g ---
+               total        used        free      shared  buff/cache   available
+Mem:            1007           6        1000           0           0         997
+Swap:              0           0           0
+
+--- BeeGFS 服务运行时长 ---
+  beegfs-storage: active since Tue 2026-07-07 09:18:52 UTC
+  beegfs-meta: active since Tue 2026-07-07 09:18:52 UTC
+
+--- beegfs-net (storage 侧连接) ---
+
+--- iostat NVMe (1s x2, 取第二采样) ---
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util
+nvme2n1         30.19   5704.01     0.00   0.00    0.35   188.91   12.83   3396.28     0.00   0.01    0.17   264.64    0.01  13922.51     0.00   0.00   83.15 2780508.13    0.00    0.00    0.01   1.08
+nvme3n1         30.69   5674.62     0.00   0.00    0.35   184.92   12.79   3395.70     0.00   0.01    0.19   265.45    0.01  13922.51     0.00   0.00   84.02 2779477.55    0.00    0.00    0.01   1.06
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util
+nvme2n1          0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00    0.00    0.00   0.00
+nvme3n1          0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00    0.00    0.00   0.00
+
+--- beegfs-storage 线程数 ---
+  (beegfs-storage process not found)
+
+--- /proc/buddyinfo (内存碎片) ---
+Node 0, zone      DMA      0      0      0      0      0      0      0      0      1      1      2 
+Node 0, zone    DMA32      4      6      7      5      6      5      3      6      6      6    363 
+Node 0, zone   Normal  10230  21247  14427  16746  12106   7644   4402   2098    877    263 126427 
+Node 1, zone   Normal   3276   6533   7872  10733   7473   4426   2185   1226    500     39 126974 
+
+--- meminfo THP ---
+AnonHugePages:   1716224 kB
+ShmemHugePages:        0 kB
+FileHugePages:         0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+
+======================================================
+=== slave 10.20.1.152 ===
+======================================================
+
+--- date / uptime / load ---
+Tue Jul  7 22:28:01 +07 2026
+ 22:28:01 up 13 days,  7:33,  3 users,  load average: 0.00, 0.00, 0.00
+
+--- free -g ---
+               total        used        free      shared  buff/cache   available
+Mem:            1007           6        1000           0           0         997
+Swap:              0           0           0
+
+--- BeeGFS 服务运行时长 ---
+  beegfs-storage: active since Tue 2026-07-07 16:18:52 +07
+  beegfs-meta: active since Tue 2026-07-07 16:18:52 +07
+
+--- beegfs-net (storage 侧连接) ---
+
+--- iostat NVMe (1s x2, 取第二采样) ---
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util
+nvme2n1         27.80   5341.26     0.00   0.00    0.36   192.14   11.92   3180.42     0.00   0.01    0.16   266.86    0.10  19507.61     0.00   0.00    4.69 187258.81    0.00    0.00    0.01   1.02
+nvme3n1         28.35   5340.71     0.00   0.00    0.36   188.39   11.92   3180.31     0.00   0.01    0.18   266.86    0.10  19508.41     0.00   0.00    4.65 187253.94    0.00    0.00    0.01   1.02
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util
+nvme2n1          0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00    0.00    0.00   0.00
+nvme3n1          0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00    0.00    0.00   0.00
+
+--- beegfs-storage 线程数 ---
+  (beegfs-storage process not found)
+
+--- /proc/buddyinfo (内存碎片) ---
+Node 0, zone      DMA      0      0      0      0      0      0      0      0      1      1      2 
+Node 0, zone    DMA32      3      6      7      5      7      5      3      7      5      4    364 
+Node 0, zone   Normal   4055   4958   6888   8374   4885   2577   1263    671    385     23 127111 
+Node 1, zone   Normal   2819   8540  18953  14190  10433   6467   3136   1238    631    230 127026 
+
+--- meminfo THP ---
+AnonHugePages:   1630208 kB
+ShmemHugePages:        0 kB
+FileHugePages:         0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+
+======================================================
+# Snapshot complete: hourly-h7
+# File: results/20260707-restart-repro/current-state/hourly-h7-snapshot.txt
+======================================================

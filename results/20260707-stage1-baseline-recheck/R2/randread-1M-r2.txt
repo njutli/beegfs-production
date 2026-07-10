@@ -1,0 +1,34 @@
+# randread-1M round 2: rw=randread bs=1M iodepth=128 numjobs=128 direct=1 runtime=60s
+# mode: cold, extra: 
+# date: Tue Jul  7 13:36:43 +07 2026
+storage_test: (g=0): rw=randread, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=libaio, iodepth=128
+...
+fio-3.28
+Starting 128 processes
+
+storage_test: (groupid=0, jobs=128): err= 0: pid=148027: Tue Jul  7 13:37:44 2026
+  read: IOPS=10.6k, BW=10.3GiB/s (11.1GB/s)(622GiB/60162msec)
+    slat (usec): min=785, max=467650, avg=12064.12, stdev=24669.85
+    clat (usec): min=2, max=2891.9k, avg=1512435.02, stdev=335138.91
+     lat (usec): min=1364, max=2910.2k, avg=1524499.85, stdev=336381.10
+    clat percentiles (msec):
+     |  1.00th=[  609],  5.00th=[ 1003], 10.00th=[ 1116], 20.00th=[ 1250],
+     | 30.00th=[ 1334], 40.00th=[ 1435], 50.00th=[ 1519], 60.00th=[ 1586],
+     | 70.00th=[ 1687], 80.00th=[ 1787], 90.00th=[ 1938], 95.00th=[ 2056],
+     | 99.00th=[ 2299], 99.50th=[ 2366], 99.90th=[ 2534], 99.95th=[ 2601],
+     | 99.99th=[ 2702]
+   bw (  MiB/s): min= 2590, max=22456, per=100.00%, avg=10592.68, stdev=28.09, samples=14957
+   iops        : min= 2590, max=22456, avg=10592.68, stdev=28.09, samples=14957
+  lat (usec)   : 4=0.01%, 10=0.01%, 20=0.01%
+  lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.04%
+  lat (msec)   : 100=0.08%, 250=0.25%, 500=0.41%, 750=0.51%, 1000=3.54%
+  lat (msec)   : 2000=88.13%, >=2000=7.00%
+  cpu          : usr=0.03%, sys=25.02%, ctx=73576016, majf=2, minf=21957247
+  IO depths    : 1=0.1%, 2=0.1%, 4=0.1%, 8=0.2%, 16=0.3%, 32=0.6%, >=64=98.7%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=636574,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+   READ: bw=10.3GiB/s (11.1GB/s), 10.3GiB/s-10.3GiB/s (11.1GB/s-11.1GB/s), io=622GiB (667GB), run=60162-60162msec

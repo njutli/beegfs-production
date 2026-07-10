@@ -1,0 +1,42 @@
+### beegfs-net (expect TCP 10.114.1.x)
+
+mgmt_nodes
+=============
+oneasia-c1-cpu-node10 [ID: 1]
+   Connections: TCP: 1 (172.29.218.0:8008); 
+
+meta_nodes
+=============
+oneasia-c1-cpu-node10 [ID: 1]
+   Connections: TCP: 1 (10.114.1.157:8005); 
+beegfs-slave1 [ID: 2]
+   Connections: <none>
+beegfs-slave2 [ID: 3]
+   Connections: <none>
+beegfs-slave3 [ID: 4]
+   Connections: <none>
+
+storage_nodes
+=============
+beegfs-slave1 [ID: 101]
+   Connections: TCP: 2 (10.114.1.150:8003); 
+beegfs-slave2 [ID: 102]
+   Connections: TCP: 2 (10.114.1.151:8003); 
+beegfs-slave3 [ID: 103]
+   Connections: TCP: 2 (10.114.1.152:8003); 
+
+
+### targets state
+TargetID     Reachability  Consistency   NodeID
+========     ============  ===========   ======
+    1011           Online         Good      101
+    1012           Online         Good      101
+    1021           Online         Good      102
+    1022           Online         Good      102
+    1031           Online         Good      103
+    1032           Online         Good      103
+### connUseRDMA / connInterfacesFile
+# [connUseRDMA]
+eno12409
+### tc qdisc
+qdisc tbf 801a: root refcnt 129 rate 1Gbit burst 4000b lat 400ms 

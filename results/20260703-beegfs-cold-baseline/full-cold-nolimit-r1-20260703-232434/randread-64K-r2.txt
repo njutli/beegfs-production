@@ -1,0 +1,34 @@
+# randread-64K round 2: rw=randread bs=64K iodepth=128 numjobs=128 direct=1 runtime=60s
+# mode: cold, extra: 
+# date: Fri Jul  3 23:41:54 +07 2026
+storage_test: (g=0): rw=randread, bs=(R) 64.0KiB-64.0KiB, (W) 64.0KiB-64.0KiB, (T) 64.0KiB-64.0KiB, ioengine=libaio, iodepth=128
+...
+fio-3.28
+Starting 128 processes
+
+storage_test: (groupid=0, jobs=128): err= 0: pid=3329197: Fri Jul  3 23:42:54 2026
+  read: IOPS=80.9k, BW=5056MiB/s (5302MB/s)(296GiB/60009msec)
+    slat (usec): min=149, max=71196, avg=1580.03, stdev=2815.54
+    clat (nsec): min=1725, max=459810k, avg=200642535.06, stdev=47483717.34
+     lat (usec): min=206, max=463351, avg=202222.96, stdev=47764.31
+    clat percentiles (msec):
+     |  1.00th=[  125],  5.00th=[  136], 10.00th=[  144], 20.00th=[  155],
+     | 30.00th=[  165], 40.00th=[  182], 50.00th=[  199], 60.00th=[  213],
+     | 70.00th=[  228], 80.00th=[  245], 90.00th=[  266], 95.00th=[  284],
+     | 99.00th=[  313], 99.50th=[  326], 99.90th=[  351], 99.95th=[  359],
+     | 99.99th=[  380]
+   bw (  MiB/s): min= 3302, max= 7424, per=99.80%, avg=5045.87, stdev= 8.17, samples=15232
+   iops        : min=52844, max=118790, avg=80733.70, stdev=130.73, samples=15232
+  lat (usec)   : 2=0.01%, 4=0.01%, 10=0.01%, 250=0.01%, 500=0.01%
+  lat (usec)   : 750=0.01%, 1000=0.01%
+  lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.02%, 50=0.04%
+  lat (msec)   : 100=0.07%, 250=83.43%, 500=16.42%
+  cpu          : usr=0.15%, sys=63.43%, ctx=35939880, majf=2, minf=5054220
+  IO depths    : 1=0.1%, 2=0.1%, 4=0.1%, 8=0.1%, 16=0.1%, 32=0.1%, >=64=99.8%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=4854603,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+   READ: bw=5056MiB/s (5302MB/s), 5056MiB/s-5056MiB/s (5302MB/s-5302MB/s), io=296GiB (318GB), run=60009-60009msec

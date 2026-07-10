@@ -1,0 +1,34 @@
+# randread-1M round 3: rw=randread bs=1M iodepth=128 numjobs=128 direct=1 runtime=60s
+# mode: cold, extra: 
+# date: Sat Jul  4 00:17:04 +07 2026
+storage_test: (g=0): rw=randread, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=libaio, iodepth=128
+...
+fio-3.28
+Starting 128 processes
+
+storage_test: (groupid=0, jobs=128): err= 0: pid=3365434: Sat Jul  4 00:18:05 2026
+  read: IOPS=11.5k, BW=11.2GiB/s (12.0GB/s)(673GiB/60142msec)
+    slat (usec): min=757, max=372369, avg=11139.01, stdev=21572.83
+    clat (usec): min=2, max=2840.6k, avg=1397767.03, stdev=292966.67
+     lat (usec): min=1261, max=2845.9k, avg=1408906.78, stdev=294044.89
+    clat percentiles (msec):
+     |  1.00th=[  600],  5.00th=[  961], 10.00th=[ 1053], 20.00th=[ 1167],
+     | 30.00th=[ 1250], 40.00th=[ 1318], 50.00th=[ 1401], 60.00th=[ 1469],
+     | 70.00th=[ 1552], 80.00th=[ 1636], 90.00th=[ 1754], 95.00th=[ 1871],
+     | 99.00th=[ 2089], 99.50th=[ 2165], 99.90th=[ 2366], 99.95th=[ 2400],
+     | 99.99th=[ 2635]
+   bw (  MiB/s): min= 3312, max=22234, per=100.00%, avg=11467.89, stdev=27.14, samples=14956
+   iops        : min= 3312, max=22234, avg=11467.89, stdev=27.14, samples=14956
+  lat (usec)   : 4=0.01%, 10=0.01%, 50=0.01%, 100=0.01%
+  lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.04%
+  lat (msec)   : 100=0.09%, 250=0.25%, 500=0.41%, 750=0.56%, 1000=5.45%
+  lat (msec)   : 2000=91.20%, >=2000=1.96%
+  cpu          : usr=0.04%, sys=26.77%, ctx=76386761, majf=2, minf=25622140
+  IO depths    : 1=0.1%, 2=0.1%, 4=0.1%, 8=0.1%, 16=0.3%, 32=0.6%, >=64=98.8%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=689346,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+   READ: bw=11.2GiB/s (12.0GB/s), 11.2GiB/s-11.2GiB/s (12.0GB/s-12.0GB/s), io=673GiB (723GB), run=60142-60142msec

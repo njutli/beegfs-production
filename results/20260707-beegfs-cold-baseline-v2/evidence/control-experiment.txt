@@ -1,0 +1,22 @@
+===== CONTROL EXPERIMENT: slaves UNTUNED =====
+date: Tue Jul  7 11:47:40 +07 2026
+
+## seqwrite (single, bs=256K, 4G, direct=1)
+--- seqwrite r1 ---
+  seqwrite r1: WRITE=466 MiB/s
+--- seqwrite r2 ---
+  seqwrite r2: WRITE=469 MiB/s
+
+## layout (128 jobs x 1G, bs=4M, direct=1)
+--- layout r1 ---
+  layout r1: WRITE=9964 MiB/s
+--- layout r2 ---
+  layout r2: WRITE=10004 MiB/s
+
+===== SUMMARY =====
+v2 tuned baseline:    seqwrite=835  layout=10240
+control (untuned):
+  r1: seqwrite=466  layout=9964
+  r2: seqwrite=469  layout=10004
+
+DONE: Tue Jul  7 11:49:06 +07 2026

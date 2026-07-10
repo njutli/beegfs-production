@@ -141,7 +141,7 @@
 
 > 原则（不变）：不影响业务（157 内核不动、100GbE 网卡/驱动/RoCE QoS 不动）；一次一个变量；对账原始 fio；只认冷态一致轮；改动前后留原始日志。提交推送前经用户确认（`skills/doc-publish-rule.md`）。
 
-### 已完成
+### 阶段1（已完成）
 
 - **阶段0**：环境/脚本修复（meta 节点4 通信、7.x 采集、iopsget、递归 bug），可信 v2 基线建立。任务书 `doc/perf-tasks/stage0-task-book.md`。
 - **阶段1（单流写）**：接口锁定定案（§2.1）+ 单变量矩阵穷举（§2.2），结论为单流写应用层调优无正收益。任务书 `doc/perf-tasks/stage1-task-book.md`（及 restart-repro / lock-rdma-iface 两份专项）。

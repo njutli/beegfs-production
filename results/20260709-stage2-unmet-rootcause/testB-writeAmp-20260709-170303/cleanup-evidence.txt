@@ -1,0 +1,4 @@
+### post-cleanup root getentryinfo (confirm Buddy Mirror intact)
+Stat failed: No such file or directory
+### nomirror-test existence check (should be gone)
+ls: cannot access '/mnt/beegfs/nomirror-test': No such file or directory

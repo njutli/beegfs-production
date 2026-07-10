@@ -280,19 +280,19 @@ fio --directory=${MNT}/test_dir --name=storage_test --filesize=1G --size=1G --bs
 # Random tests (bs=256K, 3 rounds, 60s each)
 fio --directory=${MNT}/test_dir --name=storage_test --filesize=1G --size=1G \
     --bs=256K --rw=randread --ioengine=libaio --iodepth=128 --numjobs=128 \
-    --direct=1 --fallocate=none --openfiles=100 --group_reporting --time_based --runtime=60s
+    --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
 fio --directory=${MNT}/test_dir --name=storage_test --filesize=1G --size=1G \
     --bs=256K --rw=randwrite --ioengine=libaio --iodepth=128 --numjobs=128 \
-    --direct=1 --fallocate=none --openfiles=100 --group_reporting --time_based --runtime=60s
+    --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
 fio --directory=${MNT}/test_dir --name=storage_test --filesize=1G --size=1G \
     --bs=256K --rw=randrw --ioengine=libaio --iodepth=128 --numjobs=128 \
-    --direct=1 --fallocate=none --openfiles=100 --group_reporting --time_based --runtime=60s
+    --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
 
 # Block size sweep (randread, bs=64K/256K/1M)
 for bs in 64K 256K 1M; do
   fio --directory=${MNT}/test_dir --name=storage_test --filesize=1G --size=1G \
       --bs=\${bs} --rw=randread --ioengine=libaio --iodepth=128 --numjobs=128 \
-      --direct=1 --fallocate=none --openfiles=100 --group_reporting --time_based --runtime=60s
+      --direct=1 --fallocate=none --openfiles=128 --group_reporting --time_based --runtime=60s
 done
 CMDEOF
 chmod +x "${OUTDIR}/commands.sh"

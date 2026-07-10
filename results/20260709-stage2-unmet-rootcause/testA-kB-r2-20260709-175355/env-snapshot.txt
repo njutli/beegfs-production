@@ -1,0 +1,49 @@
+### date: Thu Jul  9 17:53:55 +07 2026
+### beegfs-net (expect TCP 10.114.1.x)
+
+mgmt_nodes
+=============
+oneasia-c1-cpu-node10 [ID: 1]
+   Connections: TCP: 1 (172.29.218.0:8008); 
+
+meta_nodes
+=============
+oneasia-c1-cpu-node10 [ID: 1]
+   Connections: TCP: 3 (10.114.1.157:8005); 
+beegfs-slave1 [ID: 2]
+   Connections: <none>
+beegfs-slave2 [ID: 3]
+   Connections: <none>
+beegfs-slave3 [ID: 4]
+   Connections: <none>
+
+storage_nodes
+=============
+beegfs-slave1 [ID: 101]
+   Connections: TCP: 12 (10.114.1.150:8003); 
+beegfs-slave2 [ID: 102]
+   Connections: TCP: 12 (10.114.1.151:8003); 
+beegfs-slave3 [ID: 103]
+   Connections: TCP: 2 (10.114.1.152:8003); 
+
+
+### connUseRDMA / connInterfacesFile
+connUseRDMA                  = false
+eno12409
+### tc qdisc (4 nodes)
+qdisc tbf 801b: root refcnt 129 rate 1Gbit burst 4000b lat 400ms 
+10.20.1.150: bash: warning: setlocale: LC_ALL: cannot change locale (zh_CN.utf8)
+qdisc tbf 8009: root refcnt 129 rate 1Gbit burst 4000b lat 400ms 
+10.20.1.151: bash: warning: setlocale: LC_ALL: cannot change locale (zh_CN.utf8)
+qdisc tbf 8009: root refcnt 129 rate 1Gbit burst 4000b lat 400ms 
+10.20.1.152: bash: warning: setlocale: LC_ALL: cannot change locale (zh_CN.utf8)
+qdisc tbf 8009: root refcnt 129 rate 1Gbit burst 4000b lat 400ms 
+### targets
+TargetID     Reachability  Consistency   NodeID
+========     ============  ===========   ======
+    1011           Online         Good      101
+    1012           Online         Good      101
+    1021           Online         Good      102
+    1022           Online         Good      102
+    1031           Online         Good      103
+    1032           Online         Good      103

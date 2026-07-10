@@ -1,0 +1,6 @@
+### date: Mon Jul  6 20:21:31 +07 2026
+### beegfs services
+● beegfs-meta.service - BeeGFS Metadata Server
+     Active: active (running) since Mon 2026-07-06 19:09:44 +07; 1h 11min ago
+● beegfs-client.service - Start BeeGFS Client
+     Active: active (exited) since Mon 2026-07-06 19:09:38 +07; 1h 11min ago

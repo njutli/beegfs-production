@@ -1,0 +1,36 @@
+# 口径B进入 20260709-172221
+## 1. backup conf
+# backup -> /etc/beegfs/backup-kB-20260709-172221 (4 nodes)
+## 2. connUseRDMA=false (4 nodes)
+## 3. connInterfacesFile.conf -> eno12409 (4 nodes)
+# 157 done: # [connUseRDMA] | connIF=eno12409
+# 10.20.1.150: connUseRDMA=# [connUseRDMA] connIF=eno12409
+# 10.20.1.151: connUseRDMA=# [connUseRDMA] connIF=eno12409
+# 10.20.1.152: connUseRDMA=# [connUseRDMA] connIF=eno12409
+## 4. tc tbf 1gbit on eno12409 (bidirectional, 4 nodes)
+# 157 tc: qdisc tbf 801a: root refcnt 129 rate 1Gbit burst 4000b lat 400ms 
+# 10.20.1.150 tc: qdisc tbf 8009: root refcnt 129 rate 1Gbit burst 4000b lat 400ms 
+# 10.20.1.151 tc: qdisc tbf 8009: root refcnt 129 rate 1Gbit burst 4000b lat 400ms 
+# 10.20.1.152 tc: qdisc tbf 8009: root refcnt 129 rate 1Gbit burst 4000b lat 400ms 
+## 5. restart BeeGFS
+# 157 mgmtd...
+# mgmtd restart timeout, force kill + start
+# 157 meta + slaves meta+storage...
+# 157 client...
+## 6. wait targets Online/Good
+# t=10s targets states: ============,Online,Reachability,
+# t=20s targets states: ============,Online,Reachability,
+# t=30s targets states: ============,Online,Reachability,
+# t=40s targets states: ============,Online,Reachability,
+# t=50s targets states: ============,Online,Reachability,
+# t=60s targets states: ============,Online,Reachability,
+# t=70s targets states: ============,Online,Reachability,
+# t=80s targets states: ============,Online,Reachability,
+# t=90s targets states: ============,Online,Reachability,
+# t=100s targets states: ============,Online,Reachability,
+# t=110s targets states: ============,Online,Reachability,
+# t=120s targets states: ============,Online,Reachability,
+# t=130s targets states: ============,Online,Reachability,
+# t=140s targets states: ============,Online,Reachability,
+# t=150s targets states: ============,Online,Reachability,
+# t=160s targets states: ============,Online,Reachability,

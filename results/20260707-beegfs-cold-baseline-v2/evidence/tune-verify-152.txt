@@ -1,0 +1,20 @@
+=== beegfs-slave3 ===
+date: Mon Jul  6 18:27:36 +07 2026
+THP: [always] madvise never
+THP-defrag: [always] defer defer+madvise madvise never
+dirty_bg: 5
+dirty: 10
+vfs_cache: 50
+min_free: 262144
+zrc: 1
+nvme0n1: sched=[none] mq-deadline  ra=256 nr=1023 maxsec=1280
+nvme1n1: sched=[none] mq-deadline  ra=4096 nr=1023 maxsec=256
+nvme2n1: sched=[none] mq-deadline  ra=4096 nr=1023 maxsec=256
+nvme3n1: sched=[none] mq-deadline  ra=4096 nr=1023 maxsec=256
+gov: N/A
+swap: 
+sysctl-file: /etc/sysctl.d/99-beegfs.conf
+thp-service: active
+rc-local: inactive
+MISSING
+fd-limit: 1000000

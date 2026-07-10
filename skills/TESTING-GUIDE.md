@@ -180,6 +180,51 @@ rm -rf /mnt/beegfs/test_dir /mnt/beegfs/seq_dir
 df -h /data
 ```
 
+### 5.5 干净重启顺序（helperd 必须先于 client）
+
+**现象**：手动/干净重启后 client mount 报 "Operation canceled"，反复 failed。
+
+**根因**：client 经 beegfs-helperd 做日志/解析（`logType=helperd`），helperd 未起时 client 无法 mount。
+
+**处理**：按顺序启动，helperd 在 client 之前：
+```bash
+# 顺序：mgmtd → meta → storage → helperd → client
+sudo systemctl start beegfs-mgmtd; sleep 3
+sudo systemctl start beegfs-meta beegfs-storage; sleep 5
+sudo systemctl start beegfs-helperd; sleep 2   # 必须先于 client
+sudo systemctl start beegfs-client
+```
+（来源：`results/20260709-stage2-unmet-rootcause/` §8.2）
+
+### 5.6 不完整重启导致镜像复制路由失真
+
+**现象**：切限速口径（eno12409 TCP）后单流 seqwrite 明显偏高（如 96.8 而非预期 ~53），数据失真。
+
+**根因**：`mgmtd force-kill` 造成不完整重启时，storage 间镜像复制残留旧连接，未走 eno12409。
+
+**处理**：干净重启（`pkill beegfs` → mgmtd → meta+storage → helperd → client）后复制正确走 eno12409，seqwrite 回到 53.0（匹配历史）。切换网络口径后务必确认复制路径正确再采数据。
+（来源：`results/20260709-stage2-unmet-rootcause/` §8.3）
+
+### 5.7 pkill 自杀陷阱
+
+**现象**：`pkill -f beegfs` 意外杀掉正在执行的 shell。
+
+**根因**：`-f` 匹配整条命令行，会命中命令行含 "beegfs" 的 shell 自身。
+
+**处理**：用 `pkill beegfs`（匹配进程名，不含 `-f`）。
+
+### 5.8 getentryinfo 语法
+
+**现象**：`beegfs-ctl --getentryinfo --entry=<path>` 报 "Stat failed"。
+
+**根因**：`--getentryinfo` 用**位置参数**，非 `--entry=`。
+
+**处理**：
+```bash
+beegfs-ctl --getentryinfo <path>     # 正确（位置参数）
+```
+（注：`bench-full.sh` env-snapshot 有同一 bug，待修复。）
+
 ---
 
 ## 六、测试结果可靠性判断标准

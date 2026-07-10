@@ -1,0 +1,34 @@
+# randread-64K round 3: rw=randread bs=64K iodepth=128 numjobs=128 direct=1 runtime=60s
+# mode: cold, extra: 
+# date: Wed Jul  8 15:49:26 +07 2026
+storage_test: (g=0): rw=randread, bs=(R) 64.0KiB-64.0KiB, (W) 64.0KiB-64.0KiB, (T) 64.0KiB-64.0KiB, ioengine=libaio, iodepth=128
+...
+fio-3.28
+Starting 128 processes
+
+storage_test: (groupid=0, jobs=128): err= 0: pid=1826812: Wed Jul  8 15:50:26 2026
+  read: IOPS=76.1k, BW=4755MiB/s (4986MB/s)(279GiB/60008msec)
+    slat (usec): min=141, max=59649, avg=1680.53, stdev=3149.93
+    clat (nsec): min=1911, max=433005k, avg=213248709.19, stdev=37388701.79
+     lat (usec): min=180, max=436812, avg=214929.58, stdev=37532.77
+    clat percentiles (msec):
+     |  1.00th=[  134],  5.00th=[  157], 10.00th=[  167], 20.00th=[  182],
+     | 30.00th=[  192], 40.00th=[  203], 50.00th=[  211], 60.00th=[  222],
+     | 70.00th=[  232], 80.00th=[  245], 90.00th=[  262], 95.00th=[  279],
+     | 99.00th=[  309], 99.50th=[  317], 99.90th=[  342], 99.95th=[  351],
+     | 99.99th=[  372]
+   bw (  MiB/s): min= 2583, max= 6264, per=99.71%, avg=4740.87, stdev= 4.48, samples=15232
+   iops        : min=41308, max=100226, avg=75852.99, stdev=71.72, samples=15232
+  lat (usec)   : 2=0.01%, 4=0.01%, 10=0.01%, 100=0.01%, 250=0.01%
+  lat (usec)   : 500=0.01%, 750=0.01%, 1000=0.01%
+  lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.02%, 50=0.05%
+  lat (msec)   : 100=0.09%, 250=83.83%, 500=16.00%
+  cpu          : usr=0.13%, sys=65.72%, ctx=27592556, majf=2, minf=5267406
+  IO depths    : 1=0.1%, 2=0.1%, 4=0.1%, 8=0.1%, 16=0.1%, 32=0.1%, >=64=99.8%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=4565136,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+   READ: bw=4755MiB/s (4986MB/s), 4755MiB/s-4755MiB/s (4986MB/s-4986MB/s), io=279GiB (299GB), run=60008-60008msec

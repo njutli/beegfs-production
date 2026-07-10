@@ -1,0 +1,19 @@
+### RDMA sentinel evidence — stage2A round1
+### date: Wed Jul  8 15:05:06 +07 2026
+### connInterfacesFile config:
+34:connInterfacesFile            = /etc/beegfs/connInterfacesFile.conf
+### connInterfacesFile.conf:
+enp139s0f0np0
+enp139s0f1np1
+### connUseRDMA:
+40:connUseRDMA                   = true
+### beegfs-net (storage):
+storage_nodes
+=============
+beegfs-slave1 [ID: 101]
+   Connections: RDMA: 2 (10.3.1.6:8003); 
+beegfs-slave2 [ID: 102]
+   Connections: RDMA: 2 (10.3.1.7:8003); 
+beegfs-slave3 [ID: 103]
+   Connections: RDMA: 2 (10.3.1.8:8003); 
+

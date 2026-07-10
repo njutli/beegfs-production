@@ -1,0 +1,369 @@
+===== TEST: seqwrite =====
+===== DATE: Mon Jul  6 18:30:34 +07 2026 =====
+===== HOST: oneasia-c1-cpu-node10 =====
+
+===== NETWORK BEFORE =====
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 11020142733382 9489483252    0    0    0     0          0         0 11020142733382 9489483252    0    0    0     0       0          0
+eno8303:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+eno12399: 379319252126749 257354616815    0 452390    0     0          0   6580475 39517272571492 68034158518    0    0    0     0       0          0
+enp139s0f0np0: 12388170455405 6889374918    0    0    0     0          0    454111 106880701  440045    0    0    0     0       0          0
+eno12409: 2793142027909 2045211198    0    0    0     0          0   6580481 1694398506661 1321964835    0    0    0     0       0          0
+eno8403:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+enp139s0f1np1: 12365578300647 6771955514    0    0    0     0          0    411299 27664657266337 18278984901    0    0    0     0       0          0
+br-51078ade5700:     168       6    0    0    0     0          0         0      926       9    0    0    0     0       0          0
+br-7341a1284b94:     168       6    0    0    0     0          0         0      706       7    0    0    0     0       0          0
+br-ed24e1b99f0e:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+docker0: 261884766152 801018558    0    0    0     0          0         0 730225814285 1309694557    0    0    0     0       0          0
+br-4f32caabb00c:      84       3    0    0    0     0          0         0      706       7    0    0    0     0       0          0
+veth31bbbae:     126       3    0    0    0     0          0         0 98112300  414632    0    0    0     0       0          0
+veth562c8bd:     126       3    0    0    0     0          0         0 98112482  414635    0    0    0     0       0          0
+cali96d9e092680: 4383396654 34863118    0    0    0     0          0         0 7530351855 47969812    0    0    0     0       0          0
+cali5c4961bf7a9:  237318    3393    0    0    0     0          0         0 99520732  411258    0    0    0     0       0          0
+caliece12277ee8: 5158337985 9326223    0    0    0     0          0         0 1910585273 5962335    0    0    0     0       0          0
+ tunl0: 5375458179 28904959    0    0    0     0          0         0 3142680044 19047435    0    1    0     0       0          0
+
+===== CPU CORES =====
+96
+===== LOAD BEFORE =====
+16.76 16.87 16.90 17/13553 3137947
+
+===== FIO STARTED (PID=3137948) =====
+
+===== TOP SAMPLE 1 (10s into fio) =====
+top - 18:30:45 up 142 days, 19:35, 2715 users,  load average: 16.79, 16.87, 16.9
+Tasks: 9829 total,  17 running, 9811 sleeping,   1 stopped,   0 zombie
+%Cpu(s): 13.4 us,  0.5 sy,  0.0 ni, 86.0 id,  0.0 wa,  0.0 hi,  0.1 si,  0.0 st
+MiB Mem : 1031555.+total, 346076.1 free, 111647.6 used, 573832.1 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used. 906775.8 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+3263760 root      20   0 9620556   2.1g 465000 R 111.5   0.2   9511:01 wekanode
+3263761 root      20   0 9620556   2.1g 466564 R 111.5   0.2   9508:58 wekanode
+3263762 root      20   0 9047088   2.1g 466544 R 111.5   0.2   9542:29 wekanode
+3263784 root      20   0 9047092   2.1g 466472 R 111.5   0.2   9541:42 wekanode
+3263802 root      20   0 9047088   2.1g 464992 R 111.5   0.2   9543:58 wekanode
+3263808 root      20   0 9047088   2.1g 466472 R 111.5   0.2   9544:08 wekanode
+3263814 root      20   0 9620556   2.1g 466484 R 111.5   0.2   9513:22 wekanode
+3263826 root      20   0 9620556   2.1g 466560 R 111.5   0.2   9495:48 wekanode
+3263748 root      20   0 9047092   2.1g 465056 R 107.7   0.2   9544:31 wekanode
+3263749 root      20   0 9047092   2.1g 465116 R 107.7   0.2   9509:15 wekanode
+3263766 root      20   0 9047088   2.1g 465116 R 107.7   0.2   9544:14 wekanode
+3263772 root      20   0 9620552   2.1g 465072 R 107.7   0.2   9504:11 wekanode
+3263778 root      20   0 9620552   2.1g 465068 R 107.7   0.2   9503:02 wekanode
+3263790 root      20   0 9620556   2.1g 464944 R 107.7   0.2   9512:23 wekanode
+3263796 root      20   0 9047088   2.1g 466544 R 107.7   0.2   9563:53 wekanode
+3263820 root      20   0 9620552   2.1g 466560 R 107.7   0.2   9512:01 wekanode
+3138121 sunrise   20   0   21792  14884   3304 R  50.0   0.0   0:00.21 top
+3263551 root      15  -5   10.2g   2.8g 639600 S  23.1   0.3   1716:53 wekanode
+
+===== TOP SAMPLE 2 (20s into fio) =====
+top - 18:30:55 up 142 days, 19:35, 2715 users,  load average: 16.89, 16.89, 16.9
+Tasks: 9831 total,  19 running, 9811 sleeping,   1 stopped,   0 zombie
+%Cpu(s): 13.8 us,  0.5 sy,  0.0 ni, 85.6 id,  0.0 wa,  0.0 hi,  0.1 si,  0.0 st
+MiB Mem : 1031555.+total, 346025.9 free, 111691.5 used, 573838.4 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used. 906727.9 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+3263796 root      20   0 9047088   2.1g 466544 R 114.3   0.2   9564:04 wekanode
+3263802 root      20   0 9047088   2.1g 464992 R 114.3   0.2   9544:08 wekanode
+3263748 root      20   0 9047092   2.1g 465056 R 110.7   0.2   9544:42 wekanode
+3263749 root      20   0 9047092   2.1g 465116 R 110.7   0.2   9509:25 wekanode
+3263760 root      20   0 9620556   2.1g 465000 R 110.7   0.2   9511:12 wekanode
+3263762 root      20   0 9047088   2.1g 466544 R 110.7   0.2   9542:39 wekanode
+3263766 root      20   0 9047088   2.1g 465116 R 110.7   0.2   9544:24 wekanode
+3263772 root      20   0 9620552   2.1g 465072 R 110.7   0.2   9504:22 wekanode
+3263784 root      20   0 9047092   2.1g 466472 R 110.7   0.2   9541:53 wekanode
+3263790 root      20   0 9620556   2.1g 464944 R 110.7   0.2   9512:34 wekanode
+3263808 root      20   0 9047088   2.1g 466472 R 110.7   0.2   9544:18 wekanode
+3263814 root      20   0 9620556   2.1g 466484 R 110.7   0.2   9513:33 wekanode
+3263820 root      20   0 9620552   2.1g 466560 R 110.7   0.2   9512:12 wekanode
+3263761 root      20   0 9620556   2.1g 466564 R 107.1   0.2   9509:09 wekanode
+3263778 root      20   0 9620552   2.1g 465068 R 107.1   0.2   9503:13 wekanode
+3263826 root      20   0 9620556   2.1g 466560 R 107.1   0.2   9495:59 wekanode
+3138566 sunrise   20   0   21792  14836   3256 R  42.9   0.0   0:00.21 top
+3263551 root      15  -5   10.2g   2.8g 639600 R  28.6   0.3   1716:55 wekanode
+
+===== TOP SAMPLE 3 (30s into fio) =====
+top - 18:31:05 up 142 days, 19:35, 2715 users,  load average: 16.76, 16.86, 16.9
+Tasks: 9831 total,  18 running, 9812 sleeping,   1 stopped,   0 zombie
+%Cpu(s): 12.8 us,  0.5 sy,  0.0 ni, 86.7 id,  0.0 wa,  0.0 hi,  0.1 si,  0.0 st
+MiB Mem : 1031555.+total, 346033.3 free, 111678.1 used, 573844.4 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used. 906741.3 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+3263748 root      20   0 9047092   2.1g 465056 R  96.3   0.2   9544:53 wekanode
+3263749 root      20   0 9047092   2.1g 465116 R  96.3   0.2   9509:36 wekanode
+3263760 root      20   0 9620556   2.1g 465000 R  96.3   0.2   9511:22 wekanode
+3263761 root      20   0 9620556   2.1g 466564 R  96.3   0.2   9509:20 wekanode
+3263762 root      20   0 9047088   2.1g 466544 R  96.3   0.2   9542:50 wekanode
+3263766 root      20   0 9047088   2.1g 465116 R  96.3   0.2   9544:35 wekanode
+3263772 root      20   0 9620552   2.1g 465072 R  96.3   0.2   9504:33 wekanode
+3263778 root      20   0 9620552   2.1g 465068 R  96.3   0.2   9503:23 wekanode
+3263784 root      20   0 9047092   2.1g 466472 R  96.3   0.2   9542:04 wekanode
+3263790 root      20   0 9620556   2.1g 464944 R  96.3   0.2   9512:44 wekanode
+3263796 root      20   0 9047088   2.1g 466544 R  96.3   0.2   9564:14 wekanode
+3263802 root      20   0 9047088   2.1g 464992 R  96.3   0.2   9544:19 wekanode
+3263808 root      20   0 9047088   2.1g 466472 R  96.3   0.2   9544:29 wekanode
+3263814 root      20   0 9620556   2.1g 466484 R  96.3   0.2   9513:43 wekanode
+3263820 root      20   0 9620552   2.1g 466560 R  96.3   0.2   9512:23 wekanode
+3263826 root      20   0 9620556   2.1g 466560 R  96.3   0.2   9496:09 wekanode
+3138640 sunrise   20   0   21792  14876   3296 R  40.7   0.0   0:00.20 top
+3138047 sunrise   20   0  217944   6480   1472 R  18.5   0.0   0:06.19 fio
+
+===== NUMASTAT =====
+
+Per-node system memory usage (in MBs):
+Token SwapCached not in hash table.
+Token FileHugePages not in hash table.
+Token FilePmdMapped not in hash table.
+Token SwapCached not in hash table.
+Token FileHugePages not in hash table.
+Token FilePmdMapped not in hash table.
+                          Node 0          Node 1           Total
+                 --------------- --------------- ---------------
+MemTotal               515483.04       516072.75      1031555.79
+MemFree                  2548.37       343491.14       346039.50
+MemUsed                512934.68       172581.61       685516.29
+Active                   4314.83         2451.85         6766.68
+Inactive               467848.40       123875.07       591723.48
+Active(anon)               50.90           55.87          106.77
+Inactive(anon)          22021.57        23998.30        46019.86
+Active(file)             4263.93         2395.98         6659.91
+Inactive(file)         445826.84        99876.78       545703.61
+Unevictable             15290.43        18200.96        33491.38
+Mlocked                 15287.43        18200.97        33488.39
+Dirty                       0.41            3.30            3.71
+Writeback                   0.00            0.00            0.00
+FilePages              453392.68       106201.85       559594.52
+Mapped                   2149.96         2827.31         4977.27
+AnonPages               34061.07        38326.30        72387.37
+Shmem                    3308.06         3382.12         6690.18
+KernelStack               105.66          108.15          213.81
+PageTables                350.44          390.03          740.46
+NFS_Unstable                0.00            0.00            0.00
+
+===== PS TOP CPU (30s into fio) =====
+    PID COMMAND         %CPU %MEM PSR CMD
+3263796 wekanode         103  0.2   7 /weka/wekanode --slot 8 --container-name client
+3263748 wekanode         102  0.2  15 /weka/wekanode --slot 16 --container-name client
+3263762 wekanode         102  0.2  13 /weka/wekanode --slot 14 --container-name client
+3263766 wekanode         102  0.2   9 /weka/wekanode --slot 10 --container-name client
+3263784 wekanode         102  0.2   3 /weka/wekanode --slot 4 --container-name client
+3263802 wekanode         102  0.2  11 /weka/wekanode --slot 12 --container-name client
+3263808 wekanode         102  0.2   1 /weka/wekanode --slot 2 --container-name client
+3263790 wekanode         102  0.2   6 /weka/wekanode --slot 5 --container-name client
+3263814 wekanode         102  0.2   4 /weka/wekanode --slot 3 --container-name client
+3263749 wekanode         102  0.2   5 /weka/wekanode --slot 6 --container-name client
+3263760 wekanode         102  0.2  16 /weka/wekanode --slot 15 --container-name client
+3263761 wekanode         102  0.2  14 /weka/wekanode --slot 13 --container-name client
+3263772 wekanode         102  0.2   8 /weka/wekanode --slot 7 --container-name client
+3263820 wekanode         102  0.2   2 /weka/wekanode --slot 1 --container-name client
+3263778 wekanode         102  0.2  12 /weka/wekanode --slot 11 --container-name client
+3263826 wekanode         102  0.2  10 /weka/wekanode --slot 9 --container-name client
+3138047 fio             20.0  0.0 101 fio --name=ev-seqwrite --directory=/mnt/beegfs/evidence-test --rw=write --bs=256K --size=4G --refill_buffers --direct=1 --time_based --runtime=60s --group_reporting
+3263551 wekanode        18.5  0.2  29 /weka/wekanode --slot 0 --container-name client
+3137948 fio             10.3  0.0 106 fio --name=ev-seqwrite --directory=/mnt/beegfs/evidence-test --rw=write --bs=256K --size=4G --refill_buffers --direct=1 --time_based --runtime=60s --group_reporting
+3263321 rotate_files.py  4.0  0.0  23 /usr/local/bin/python3-weka /weka/scripts/rotate_files.py
+   6911 kubelet          1.9  0.0   0 /usr/bin/kubelet --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --config=/var/lib/kubelet/config.yaml --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock --pod-infra-container-image=registry.k8s.io/pause:3.9
+3263313 trace-dumper     1.1  0.1  53 /weka/dumper/trace-dumper --histogram-interval 60
+ 823518 server           1.0  0.0 107 /mnt/data04/144632/jtu@videorebirth.com/code/ddit/.venv/lib/python3.12/site-packages/tensorboard_data_server/bin/server --logdir=. --reload=5 --samples-per-plugin= --port=0 --port-file=/tmp/tensorboard_data_server_b9ulwiqz/port --die-after-stdin --error-file=/tmp/tensorboard_data_server_b9ulwiqz/startup_error
+3263072 weka             1.0  0.0  59 /usr/bin/weka --agent
+    792 kcompactd1       0.9  0.0  22 [kcompactd1]
+   9005 calico-node      0.9  0.0  23 calico-node -felix
+   2712 containerd       0.8  0.0   2 /usr/bin/containerd
+    791 kcompactd0       0.6  0.0  26 [kcompactd0]
+    978 kswapd0          0.5  0.0  17 [kswapd0]
+
+===== BEEGFS + FIO PROCESSES =====
+   1001 vfio-irqfd-clea  0.0  0.0 [vfio-irqfd-clea]
+ 294731 weka-retra-A00   0.0  0.0 [weka-retra-A00]
+ 294732 weka-aio-A00-0   0.0  0.0 [weka-aio-A00-0]
+ 294733 weka-aio-A00-1   0.0  0.0 [weka-aio-A00-1]
+ 294734 weka-reqfn-A00   0.0  0.0 [weka-reqfn-A00]
+ 294735 weka-retra-A01   0.0  0.0 [weka-retra-A01]
+ 294736 weka-aio-A01-0   0.0  0.0 [weka-aio-A01-0]
+ 294737 weka-aio-A01-1   0.0  0.0 [weka-aio-A01-1]
+ 294738 weka-reqfn-A01   0.0  0.0 [weka-reqfn-A01]
+ 294739 weka-retra-A02   0.0  0.0 [weka-retra-A02]
+ 294740 weka-aio-A02-0   0.0  0.0 [weka-aio-A02-0]
+ 294741 weka-aio-A02-1   0.0  0.0 [weka-aio-A02-1]
+ 294742 weka-reqfn-A02   0.0  0.0 [weka-reqfn-A02]
+ 294743 weka-retra-A03   0.0  0.0 [weka-retra-A03]
+ 294744 weka-aio-A03-0   0.0  0.0 [weka-aio-A03-0]
+ 294745 weka-aio-A03-1   0.0  0.0 [weka-aio-A03-1]
+ 294746 weka-reqfn-A03   0.0  0.0 [weka-reqfn-A03]
+ 294747 weka-retra-A04   0.0  0.0 [weka-retra-A04]
+ 294748 weka-aio-A04-0   0.0  0.0 [weka-aio-A04-0]
+ 294749 weka-aio-A04-1   0.0  0.0 [weka-aio-A04-1]
+ 294750 weka-reqfn-A04   0.0  0.0 [weka-reqfn-A04]
+ 294751 weka-retra-A05   0.0  0.0 [weka-retra-A05]
+ 294752 weka-aio-A05-0   0.0  0.0 [weka-aio-A05-0]
+ 294753 weka-aio-A05-1   0.0  0.0 [weka-aio-A05-1]
+ 294754 weka-reqfn-A05   0.1  0.0 [weka-reqfn-A05]
+ 294755 weka-retra-A06   0.0  0.0 [weka-retra-A06]
+ 294756 weka-aio-A06-0   0.0  0.0 [weka-aio-A06-0]
+ 294757 weka-aio-A06-1   0.0  0.0 [weka-aio-A06-1]
+ 294758 weka-reqfn-A06   0.1  0.0 [weka-reqfn-A06]
+ 294759 weka-retra-A07   0.0  0.0 [weka-retra-A07]
+ 294760 weka-aio-A07-0   0.0  0.0 [weka-aio-A07-0]
+ 294761 weka-aio-A07-1   0.0  0.0 [weka-aio-A07-1]
+ 294762 weka-reqfn-A07   0.0  0.0 [weka-reqfn-A07]
+ 294763 weka-retra-A08   0.0  0.0 [weka-retra-A08]
+ 294764 weka-aio-A08-0   0.0  0.0 [weka-aio-A08-0]
+ 294765 weka-aio-A08-1   0.0  0.0 [weka-aio-A08-1]
+ 294766 weka-reqfn-A08   0.0  0.0 [weka-reqfn-A08]
+ 294767 weka-retra-A09   0.0  0.0 [weka-retra-A09]
+ 294768 weka-aio-A09-0   0.0  0.0 [weka-aio-A09-0]
+ 294769 weka-aio-A09-1   0.0  0.0 [weka-aio-A09-1]
+ 294770 weka-reqfn-A09   0.0  0.0 [weka-reqfn-A09]
+ 294771 weka-retra-A10   0.0  0.0 [weka-retra-A10]
+ 294772 weka-aio-A10-0   0.0  0.0 [weka-aio-A10-0]
+ 294773 weka-aio-A10-1   0.0  0.0 [weka-aio-A10-1]
+ 294774 weka-reqfn-A10   0.1  0.0 [weka-reqfn-A10]
+ 294775 weka-retra-A11   0.0  0.0 [weka-retra-A11]
+ 294776 weka-aio-A11-0   0.0  0.0 [weka-aio-A11-0]
+ 294777 weka-aio-A11-1   0.0  0.0 [weka-aio-A11-1]
+ 294778 weka-reqfn-A11   0.0  0.0 [weka-reqfn-A11]
+ 294779 weka-retra-A12   0.0  0.0 [weka-retra-A12]
+ 294780 weka-aio-A12-0   0.0  0.0 [weka-aio-A12-0]
+ 294781 weka-aio-A12-1   0.0  0.0 [weka-aio-A12-1]
+ 294782 weka-reqfn-A12   0.0  0.0 [weka-reqfn-A12]
+ 294783 weka-retra-A13   0.0  0.0 [weka-retra-A13]
+ 294784 weka-aio-A13-0   0.0  0.0 [weka-aio-A13-0]
+ 294785 weka-aio-A13-1   0.0  0.0 [weka-aio-A13-1]
+ 294786 weka-reqfn-A13   0.0  0.0 [weka-reqfn-A13]
+ 294787 weka-retra-A14   0.0  0.0 [weka-retra-A14]
+ 294788 weka-aio-A14-0   0.0  0.0 [weka-aio-A14-0]
+ 294789 weka-aio-A14-1   0.0  0.0 [weka-aio-A14-1]
+ 294790 weka-reqfn-A14   0.0  0.0 [weka-reqfn-A14]
+ 294791 weka-retra-A15   0.0  0.0 [weka-retra-A15]
+ 294792 weka-aio-A15-0   0.0  0.0 [weka-aio-A15-0]
+ 294793 weka-aio-A15-1   0.0  0.0 [weka-aio-A15-1]
+ 294794 weka-reqfn-A15   0.0  0.0 [weka-reqfn-A15]
+2051520 atop             0.0  0.0 /usr/bin/atop -w /var/log/weka/atop.stats 600
+3137948 fio             10.3  0.0 fio --name=ev-seqwrite --directory=/mnt/beegfs/evidence-test --rw=write --bs=256K --size=4G --refill_buffers --direct=1 --time_based --runtime=60s --group_reporting
+3138047 fio             20.2  0.0 fio --name=ev-seqwrite --directory=/mnt/beegfs/evidence-test --rw=write --bs=256K --size=4G --refill_buffers --direct=1 --time_based --runtime=60s --group_reporting
+3263072 weka             1.0  0.0 /usr/bin/weka --agent
+3263075 bash             0.0  0.0 bash -c cd /; ulimit -n 65535; exec > >(logger -t weka-agent-init) 2>&1; exec /usr/bin/weka --agent
+3263078 logger           0.0  0.0 logger -t weka-agent-init
+3263282 weka_init        0.0  0.0 /weka/weka_init /usr/local/bin/supervisord -n -c /etc/supervisord.conf
+3263309 events.py        0.0  0.0 /usr/local/bin/python3-weka /weka/scripts/events.py --rpcbind_register
+3263310 logger.py        0.0  0.0 /usr/local/bin/python3-weka /weka/scripts/logger.py
+3263312 shelld.py        0.0  0.0 /usr/local/bin/python3-weka /weka/scripts/shelld.py -p /var/run/shelld.sock -s
+3263313 trace-dumper     1.1  0.1 /weka/dumper/trace-dumper --histogram-interval 60
+3263314 trace-server     0.2  0.0 /weka/reader/trace-server --socket-address /var/run/trace-server.sock
+3263321 rotate_files.py  4.0  0.0 /usr/local/bin/python3-weka /weka/scripts/rotate_files.py
+3263551 wekanode        18.5  0.2 /weka/wekanode --slot 0 --container-name client
+3263748 wekanode         102  0.2 /weka/wekanode --slot 16 --container-name client
+3263749 wekanode         102  0.2 /weka/wekanode --slot 6 --container-name client
+3263760 wekanode         102  0.2 /weka/wekanode --slot 15 --container-name client
+3263761 wekanode         102  0.2 /weka/wekanode --slot 13 --container-name client
+3263762 wekanode         102  0.2 /weka/wekanode --slot 14 --container-name client
+3263766 wekanode         102  0.2 /weka/wekanode --slot 10 --container-name client
+3263772 wekanode         102  0.2 /weka/wekanode --slot 7 --container-name client
+3263778 wekanode         102  0.2 /weka/wekanode --slot 11 --container-name client
+3263784 wekanode         102  0.2 /weka/wekanode --slot 4 --container-name client
+3263790 wekanode         102  0.2 /weka/wekanode --slot 5 --container-name client
+3263796 wekanode         103  0.2 /weka/wekanode --slot 8 --container-name client
+3263802 wekanode         102  0.2 /weka/wekanode --slot 12 --container-name client
+3263808 wekanode         102  0.2 /weka/wekanode --slot 2 --container-name client
+3263814 wekanode         102  0.2 /weka/wekanode --slot 3 --container-name client
+3263820 wekanode         102  0.2 /weka/wekanode --slot 1 --container-name client
+3263826 wekanode         102  0.2 /weka/wekanode --slot 9 --container-name client
+3308170 beegfs/flush     0.0  0.0 [beegfs/flush]
+3308171 beegfs-rwPgWQ    0.0  0.0 [beegfs-rwPgWQ]
+3308196 beegfs_DGramLis  0.0  0.0 [beegfs_DGramLis]
+3308197 beegfs_XNodeSyn  0.0  0.0 [beegfs_XNodeSyn]
+3308198 beegfs_AckMgr    0.0  0.0 [beegfs_AckMgr]
+3308199 beegfs_Flusher   0.0  0.0 [beegfs_Flusher]
+3308221 beegfs-helperd/  0.0  0.0 /opt/beegfs/sbin/beegfs-helperd cfgFile=/etc/beegfs/beegfs-helperd.conf runDaemonized=false
+3308236 beegfs-meta/Mai  0.0  0.0 /opt/beegfs/sbin/beegfs-meta cfgFile=/etc/beegfs/beegfs-meta.conf runDaemonized=false
+3310244 beegfs-mgmtd/Ma  0.0  0.0 /opt/beegfs/sbin/beegfs-mgmtd cfgFile=/etc/beegfs/beegfs-mgmtd.conf runDaemonized=false
+
+===== NETWORK AFTER (40s into fio) =====
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 11020168988219 9489503854    0    0    0     0          0         0 11020168988219 9489503854    0    0    0     0       0          0
+eno8303:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+eno12399: 379319252788165 257354618534    0 452390    0     0          0   6580492 39517272741750 68034159632    0    0    0     0       0          0
+enp139s0f0np0: 12388175217431 6889380901    0    0    0     0          0    454112 106880941  440046    0    0    0     0       0          0
+eno12409: 2793142037420 2045211297    0    0    0     0          0   6580498 1694398510460 1321964865    0    0    0     0       0          0
+eno8403:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+enp139s0f1np1: 12365581239956 6771958267    0    0    0     0          0    411300 27664892411662 18279084788    0    0    0     0       0          0
+br-51078ade5700:     168       6    0    0    0     0          0         0      926       9    0    0    0     0       0          0
+br-7341a1284b94:     168       6    0    0    0     0          0         0      706       7    0    0    0     0       0          0
+br-ed24e1b99f0e:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+docker0: 261884766152 801018558    0    0    0     0          0         0 730225814285 1309694557    0    0    0     0       0          0
+br-4f32caabb00c:      84       3    0    0    0     0          0         0      706       7    0    0    0     0       0          0
+veth31bbbae:     126       3    0    0    0     0          0         0 98112538  414633    0    0    0     0       0          0
+veth562c8bd:     126       3    0    0    0     0          0         0 98112720  414636    0    0    0     0       0          0
+cali96d9e092680: 4383407686 34863205    0    0    0     0          0         0 7530371002 47969932    0    0    0     0       0          0
+cali5c4961bf7a9:  237318    3393    0    0    0     0          0         0 99520974  411259    0    0    0     0       0          0
+caliece12277ee8: 5158338273 9326227    0    0    0     0          0         0 1910585743 5962340    0    0    0     0       0          0
+ tunl0: 5375472007 28905033    0    0    0     0          0         0 3142685916 19047477    0    1    0     0       0          0
+
+===== SS SUMMARY =====
+Total: 15741
+TCP:   2450 (estab 2204, closed 210, orphaned 0, timewait 201)
+
+Transport Total     IP        IPv6
+RAW	  5         1         4        
+UDP	  57        56        1        
+TCP	  2240      2222      18       
+INET	  2302      2279      23       
+FRAG	  0         0         0        
+
+
+===== SS BEEGFS CONNECTIONS =====
+ESTAB      0      0              172.29.218.0:8008          172.29.218.0:59806                                 
+ESTAB      0      0              10.114.1.157:8008          10.114.1.151:41176                                 
+ESTAB      0      0              172.29.218.0:39348         172.29.218.0:8008                                  
+ESTAB      0      0              10.114.1.157:8008          10.114.1.150:50508                                 
+ESTAB      0      0              10.114.1.157:8008          10.114.1.150:50518                                 
+ESTAB      0      0              10.114.1.157:8008          10.114.1.152:34574                                 
+ESTAB      0      0              10.114.1.157:8008          10.114.1.152:34558                                 
+ESTAB      0      0              172.29.218.0:8008          172.29.218.0:39348                                 
+ESTAB      0      0              172.29.218.0:59806         172.29.218.0:8008                                  
+ESTAB      0      0              10.114.1.157:8008          10.114.1.151:41160                                 
+ESTAB      0      0               10.20.1.157:22             10.20.1.160:48004                                 
+
+===== WAITING FOR FIO TO FINISH =====
+FIO exit code: 0
+
+===== LOAD AFTER =====
+16.72 16.84 16.89 17/13547 3138900
+
+===== FIO RESULT =====
+ev-seqwrite: (g=0): rw=write, bs=(R) 256KiB-256KiB, (W) 256KiB-256KiB, (T) 256KiB-256KiB, ioengine=psync, iodepth=1
+fio-3.28
+Starting 1 process
+ev-seqwrite: Laying out IO file (1 file / 4096MiB)
+
+ev-seqwrite: (groupid=0, jobs=1): err= 0: pid=3138047: Mon Jul  6 18:31:35 2026
+  write: IOPS=3355, BW=839MiB/s (880MB/s)(49.1GiB/60001msec); 0 zone resets
+    clat (usec): min=186, max=3086, avg=261.24, stdev=61.59
+     lat (usec): min=186, max=3086, avg=261.26, stdev=61.58
+    clat percentiles (usec):
+     |  1.00th=[  223],  5.00th=[  237], 10.00th=[  245], 20.00th=[  251],
+     | 30.00th=[  255], 40.00th=[  258], 50.00th=[  262], 60.00th=[  265],
+     | 70.00th=[  265], 80.00th=[  269], 90.00th=[  273], 95.00th=[  281],
+     | 99.00th=[  289], 99.50th=[  293], 99.90th=[  322], 99.95th=[ 1844],
+     | 99.99th=[ 3064]
+   bw (  KiB/s): min=355840, max=873472, per=100.00%, avg=858882.15, stdev=47345.84, samples=119
+   iops        : min= 1390, max= 3412, avg=3355.01, stdev=184.94, samples=119
+  lat (usec)   : 250=17.40%, 500=82.51%, 750=0.02%, 1000=0.01%
+  lat (msec)   : 2=0.02%, 4=0.04%
+  cpu          : usr=12.93%, sys=6.98%, ctx=456143, majf=0, minf=82
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=0,201309,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+  WRITE: bw=839MiB/s (880MB/s), 839MiB/s-839MiB/s (880MB/s-880MB/s), io=49.1GiB (52.8GB), run=60001-60001msec
+
+===== CLEANUP DONE =====
+===== END: Mon Jul  6 18:31:35 +07 2026 =====

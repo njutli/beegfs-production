@@ -1,0 +1,34 @@
+# randread-64K round 3: rw=randread bs=64K iodepth=128 numjobs=128 direct=1 runtime=60s
+# mode: cold, extra: 
+# date: Tue Jul  7 13:31:18 +07 2026
+storage_test: (g=0): rw=randread, bs=(R) 64.0KiB-64.0KiB, (W) 64.0KiB-64.0KiB, (T) 64.0KiB-64.0KiB, ioengine=libaio, iodepth=128
+...
+fio-3.28
+Starting 128 processes
+
+storage_test: (groupid=0, jobs=128): err= 0: pid=141931: Tue Jul  7 13:32:19 2026
+  read: IOPS=75.6k, BW=4724MiB/s (4954MB/s)(277GiB/60005msec)
+    slat (usec): min=147, max=60351, avg=1691.50, stdev=3171.16
+    clat (nsec): min=1797, max=433843k, avg=214666591.99, stdev=37822975.47
+     lat (usec): min=199, max=434105, avg=216358.43, stdev=37972.08
+    clat percentiles (msec):
+     |  1.00th=[  136],  5.00th=[  157], 10.00th=[  169], 20.00th=[  184],
+     | 30.00th=[  194], 40.00th=[  205], 50.00th=[  213], 60.00th=[  224],
+     | 70.00th=[  234], 80.00th=[  247], 90.00th=[  264], 95.00th=[  279],
+     | 99.00th=[  309], 99.50th=[  321], 99.90th=[  347], 99.95th=[  359],
+     | 99.99th=[  384]
+   bw (  MiB/s): min= 2686, max= 6186, per=99.63%, avg=4706.69, stdev= 4.46, samples=15232
+   iops        : min=42982, max=98984, avg=75307.00, stdev=71.38, samples=15232
+  lat (usec)   : 2=0.01%, 4=0.01%, 10=0.01%, 250=0.01%, 500=0.01%
+  lat (usec)   : 750=0.01%, 1000=0.01%
+  lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.02%, 50=0.05%
+  lat (msec)   : 100=0.09%, 250=82.73%, 500=17.09%
+  cpu          : usr=0.13%, sys=65.89%, ctx=27602078, majf=2, minf=5392857
+  IO depths    : 1=0.1%, 2=0.1%, 4=0.1%, 8=0.1%, 16=0.1%, 32=0.1%, >=64=99.8%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=4535504,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+   READ: bw=4724MiB/s (4954MB/s), 4724MiB/s-4724MiB/s (4954MB/s-4954MB/s), io=277GiB (297GB), run=60005-60005msec

@@ -1,0 +1,34 @@
+# randread-1M round 3: rw=randread bs=1M iodepth=128 numjobs=128 direct=1 runtime=60s
+# mode: cold, extra: 
+# date: Mon Jul  6 19:06:14 +07 2026
+storage_test: (g=0): rw=randread, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=libaio, iodepth=128
+...
+fio-3.28
+Starting 128 processes
+
+storage_test: (groupid=0, jobs=128): err= 0: pid=3177605: Mon Jul  6 19:07:15 2026
+  read: IOPS=8820, BW=8820MiB/s (9249MB/s)(518GiB/60118msec)
+    slat (usec): min=655, max=671770, avg=14484.24, stdev=34649.33
+    clat (usec): min=2, max=3729.5k, avg=1811546.31, stdev=433436.42
+     lat (usec): min=919, max=3786.3k, avg=1826031.38, stdev=434790.64
+    clat percentiles (msec):
+     |  1.00th=[  609],  5.00th=[ 1167], 10.00th=[ 1301], 20.00th=[ 1469],
+     | 30.00th=[ 1603], 40.00th=[ 1703], 50.00th=[ 1804], 60.00th=[ 1905],
+     | 70.00th=[ 2022], 80.00th=[ 2165], 90.00th=[ 2366], 95.00th=[ 2534],
+     | 99.00th=[ 2903], 99.50th=[ 3037], 99.90th=[ 3306], 99.95th=[ 3406],
+     | 99.99th=[ 3608]
+   bw (  MiB/s): min= 1366, max=20752, per=99.97%, avg=8817.48, stdev=28.91, samples=14882
+   iops        : min= 1366, max=20752, avg=8817.48, stdev=28.91, samples=14882
+  lat (usec)   : 4=0.01%, 10=0.02%, 50=0.01%, 250=0.01%, 1000=0.01%
+  lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.04%
+  lat (msec)   : 100=0.08%, 250=0.25%, 500=0.42%, 750=0.47%, 1000=1.17%
+  lat (msec)   : 2000=66.14%, >=2000=31.40%
+  cpu          : usr=0.03%, sys=23.81%, ctx=39054536, majf=2, minf=16429316
+  IO depths    : 1=0.1%, 2=0.1%, 4=0.1%, 8=0.2%, 16=0.4%, 32=0.8%, >=64=98.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=530250,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+   READ: bw=8820MiB/s (9249MB/s), 8820MiB/s-8820MiB/s (9249MB/s-9249MB/s), io=518GiB (556GB), run=60118-60118msec

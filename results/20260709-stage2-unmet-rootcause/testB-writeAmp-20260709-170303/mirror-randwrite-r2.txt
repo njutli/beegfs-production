@@ -1,0 +1,162 @@
+# mirror-randwrite-r2: rw=randwrite bs=256K iodepth=128 numjobs=128 direct=1 runtime=60s dir=/mnt/beegfs/test_dir
+# date: Thu Jul  9 17:08:06 +07 2026
+storage_test: (g=0): rw=randwrite, bs=(R) 256KiB-256KiB, (W) 256KiB-256KiB, (T) 256KiB-256KiB, ioengine=libaio, iodepth=128
+...
+fio-3.28
+Starting 128 processes
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+storage_test: Laying out IO file (1 file / 1024MiB)
+
+storage_test: (groupid=0, jobs=128): err= 0: pid=3143297: Thu Jul  9 17:09:07 2026
+  write: IOPS=26.4k, BW=6602MiB/s (6923MB/s)(387GiB/60031msec); 0 zone resets
+    slat (usec): min=207, max=103552, avg=4841.79, stdev=6185.63
+    clat (nsec): min=1746, max=1001.6M, avg=612404249.65, stdev=80178521.99
+     lat (usec): min=254, max=1009.0k, avg=617246.53, stdev=80437.74
+    clat percentiles (msec):
+     |  1.00th=[  430],  5.00th=[  498], 10.00th=[  523], 20.00th=[  550],
+     | 30.00th=[  575], 40.00th=[  592], 50.00th=[  609], 60.00th=[  634],
+     | 70.00th=[  651], 80.00th=[  676], 90.00th=[  709], 95.00th=[  735],
+     | 99.00th=[  793], 99.50th=[  818], 99.90th=[  860], 99.95th=[  885],
+     | 99.99th=[  919]
+   bw (  MiB/s): min= 4063, max= 8961, per=99.89%, avg=6594.69, stdev= 6.82, samples=15114
+   iops        : min=16251, max=35846, avg=26378.74, stdev=27.26, samples=15114
+  lat (usec)   : 2=0.01%, 4=0.01%, 10=0.01%, 500=0.01%, 750=0.01%
+  lat (usec)   : 1000=0.01%
+  lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.02%, 50=0.05%
+  lat (msec)   : 100=0.08%, 250=0.25%, 500=4.97%, 750=91.06%, 1000=3.55%
+  lat (msec)   : 2000=0.01%
+  cpu          : usr=0.40%, sys=62.79%, ctx=27803293, majf=2, minf=17798248
+  IO depths    : 1=0.1%, 2=0.1%, 4=0.1%, 8=0.1%, 16=0.1%, 32=0.3%, >=64=99.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=0,1585324,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+  WRITE: bw=6602MiB/s (6923MB/s), 6602MiB/s-6602MiB/s (6923MB/s-6923MB/s), io=387GiB (416GB), run=60031-60031msec
