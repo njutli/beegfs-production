@@ -1,6 +1,6 @@
 # BeeGFS 生产集群性能调优 — 基线、发现与计划
 
-> 更新：2026-07-08
+> 更新：2026-07-09
 > 集群：4 节点 BeeGFS 7.3.2（157 mgmtd+meta+client / 150·151·152 meta+2storage）
 > 镜像：metadata 2 buddy groups + storage 3 buddy groups（Buddy Mirror, chunk=1M, numtargets=3）
 > 数据面：**100GbE RDMA/RoCE**（`connUseRDMA=true`，Mellanox mlx5）；限速对比走独立网卡 `eno12409` + `tc tbf 1gbit`
@@ -135,6 +135,8 @@
 
 **观察**：并发/大块项已达 50-82%；未达标集中在 ①延迟主导的单流项（物理天花板，§2.2 定论）②randwrite（镜像写放大）③小块读退化。
 
+> 上表为 v2 单口径参照。stage2（§三）已完成双口径（100GbE RDMA + 千兆限速）基线重测，并补测坐实了全部未达标项的瓶颈根因（NIC 利用率/写放大 1.76×/IOPS×bs 分解），以 stage2 为权威版本。
+
 ---
 
 ## 三、后续调优计划
@@ -146,19 +148,68 @@
 - **阶段0**：环境/脚本修复（meta 节点4 通信、7.x 采集、iopsget、递归 bug），可信 v2 基线建立。任务书 `doc/perf-tasks/stage0-task-book.md`。
 - **阶段1（单流写）**：接口锁定定案（§2.1）+ 单变量矩阵穷举（§2.2），结论为单流写应用层调优无正收益。任务书 `doc/perf-tasks/stage1-task-book.md`（及 restart-repro / lock-rdma-iface 两份专项）。
 
-### 阶段2（进行中）：双口径基线重测，建立统一汇报口径
+### 阶段2（已完成）：双口径基线重测 + 未达标项瓶颈坐实
 
-- 任务书：`doc/perf-tasks/stage2-dual-baseline-task-book.md`。
-- 在 RDMA 锁定态下重跑全矩阵，产出两套基线表：①100GbE RDMA 不限速占比表（÷12500，50% 线 6250）②千兆限速表（eno12409 TBF 1Gbps，÷118，对齐 JuiceFS ≥59MB）。
-- 每项标注是否达 50%；未达标项给数据支撑（单流读写引 §2.2 per-IO 延迟分解；randwrite 引镜像 2× 写放大；小块读附 64K/256K/1M sweep）。
-- ⚠️ 限速口径数据面走 eno12409，需临时改 connInterfacesFile，测完务必恢复 RDMA 锁定（步骤见 `skills/beegfs-baseline-config.md` §1.6）。
+- 任务书：`doc/perf-tasks/stage2-dual-baseline-task-book.md`（基线重测）+ `doc/perf-tasks/stage2-unmet-rootcause-task-book.md`（瓶颈坐实）。
+- 结果：`results/20260708-stage2-dual-baseline/README.md`（双口径基线表）+ `results/20260709-stage2-unmet-rootcause/README.md`（瓶颈坐实三张表）。
+
+#### 口径 A 基线（100GbE RDMA 不限速，50% 线=6250，2 轮冷态一致）
+
+| 测试项 | 取值 (MiB/s) | %100GbE | ≥50%? | 说明 |
+|--------|:---:|:---:|:---:|------|
+| seqread（单流,256K） | 1516 | 12.1% | ✗ | 延迟主导 |
+| seqwrite（单流,256K,fsync） | 840 | 6.7% | ✗ | 延迟主导 |
+| multi-seqread（16,256K） | 7112 | 56.9% | ✓ | 带宽主导 |
+| multi-seqwrite（16,256K） | 7731 | 61.8% | ✓ | 带宽主导 |
+| layout（128,4M） | 10199 | 81.6% | ✓ | 带宽主导 |
+| randread（128,256K） | 9255–10752 | 74–86% | ✓ | 带宽主导（跨轮波动，见下） |
+| randwrite（128,256K） | 6146 | 49.2% | ✗ | 临界，写放大+后端 |
+| randrw R/W（128,256K） | 4645/4641 | 37.1% | ✗ | 混合读写后端约束 |
+| randread-64K（128） | 4766 | 38.1% | ✗ | 小块 per-IO 退化 |
+| randread-256K（128） | 9252–10752 | 74–86% | ✓ | 同 randread |
+| randread-1M（128） | 10650–11571 | 85–93% | ✓ | 带宽主导 |
+
+> randread 256K/1M 跨轮波动 14%（r1=10752、r2=9255），根因：大块读 NIC 带宽敏感（157 共用 WekaIO 业务流量影响 100GbE RDMA）；64K 跨轮一致（4766/4766，CPU/per-IO 主导不受业务影响）。达标结论不受影响。
+
+#### 口径 B 基线（千兆限速，50% 线=59，2 轮冷态一致）
+
+| 测试项 | 取值 (MiB/s) | %千兆 (÷118) | ≥59? | 说明 |
+|--------|:---:|:---:|:---:|------|
+| seqread（单流） | 104 | 88% | ✓ | 超 |
+| seqwrite（单流,fsync） | 53.3 | 45% | ✗ | 临界低于（历史 58.8 亦低于） |
+| multi-seqread（16） | 275 | 233% | ✓ | 远超（3 节点聚合） |
+| multi-seqwrite（16） | 113 | 96% | ✓ | 超 |
+| layout（128,4M） | 113 | 96% | ✓ | 超 |
+| randread（128,256K） | 340 | 288% | ✓ | 远超（≈3×118 聚合上限） |
+| randwrite（128,256K） | 111 | 94% | ✓ | 超 |
+| randrw R/W（128,256K） | 108/107 | 92% | ✓ | 超 |
+| randread-64K/256K/1M（128） | 340 | 288% | ✓ | 均远超 |
+
+> 多流项 >100% 属正常：3 slave 各走 1gbit，聚合上限 ≈ 3×118=354 MiB/s。除单流写外全部达标，多流/随机远超 JuiceFS 千兆线。
+
+#### 未达标项瓶颈坐实（补测，逐项抓直接实测证据）
+
+| 未达标项 | 口径 | 达标率 | 瓶颈根因（实测坐实） | 关键证据 |
+|----------|------|:---:|------|------|
+| ① seqread 1516 | A | 12.1% | per-IO 延迟主导（clat 165µs） | NIC 利用率 11.7%，100GbE 链路远未打满 |
+| ① seqwrite 840 | A | 6.7% | per-IO 延迟主导（clat 260µs） | NIC 利用率 6.7% |
+| ② randwrite 6146 | A | 49.2% | Buddy Mirror 2× 写放大+NVMe 聚合 | 非镜像子目录 11520 vs 镜像 6545 = **1.76×** |
+| ③ randrw 4645/4641 | A | 37.1% | 读写竞争同一写天花板 | 随 randwrite 改善 |
+| ④ randread-64K 4766 | A | 38.1% | 小块 per-IO 固定开销 | IOPS×bs≈bw，64K IOPS 76k 但 bw 仅 4766（1M 的 0.41×） |
+| ⑤ seqwrite 53.3 | B | 45.0% | 单流+镜像双写+千兆 RTT 串行 | NIC 利用率 45%，链路未打满 |
+
+> **测试 A（单流 NIC 利用率）**：口径 A 用 IB counters（`/sys/class/infiniband/mlx5_*/ports/*/counters/port_xmit_data|port_rcv_data`，4B 单位，multi-seqwrite 反推校准误差<5%）抓 3 slave 100GbE 速率，单流 6.7–11.7% 远 < 50%；口径 B 用 sar `-n DEV 1` 抓 4 节点 eno12409，单流 tx 45%、multi tx 96%。
+> **测试 B（写放大对照）**：建非镜像子目录（RAID0/chunk1M/numtargets=6，`beegfs-ctl --setpattern`，不动根 stripe），镜像 randwrite 6545 vs 非镜像 11520（1.76×≈2×），测后删除子目录。iostat 抓 3 slave 6 NVMe。
+> **测试 C（小块读分解）**：64K/256K/1M IOPS+clat 从原始 fio 提取，IOPS×bs≈bw 关系成立（76.1k×64K=4754、43.2k×256K=10797、11.6k×1M=11598）。
+
+**结论**：6 项未达标项瓶颈均已用直接实测证据坐实——**延迟主导（①①⑤）、写放大（②③）、小块开销（④）**，均非带宽不足或配置错误。
 
 ### 阶段3（规划）：聚焦未达标的带宽主导项
 
-有真实优化空间的项（区别于延迟主导、物理天花板的单流项）：
+依据 stage2 补测结论，有真实优化空间的项（区别于延迟主导、物理天花板的单流项）：
 
-- **randwrite（49% → 提升）**：非镜像子目录（`--setpattern --pattern=raid0 --numtargets=3/6`）对照量化 Buddy Mirror 2× 写放大真实代价；`tuneStorageThreadsPerTarget`、XFS `allocsize` 对照。**不改生产镜像配置，仅测量对照。**
-- **小块读退化（randread 64K 39%）**：slave 侧 read_ahead_kb（256/1024/8192）、iodepth、chunksize 与小块读关系；仍限 BeeGFS 应用层 / slave 端，不动网卡。
+- **randwrite 写放大（49.2% → 提升）**：非镜像子目录对照已坐实 Buddy Mirror 2× 写放大（镜像 6545 vs 非镜像 11520，**1.76×**，逼近 6 NVMe 聚合上限）。stage3 可探索：关镜像对照（非生产态测上限）、chunksize/numtargets 对写放大的影响。**不改生产镜像配置，仅测量对照。**
+- **randread-64K 小块读（38.1% → 提升）**：IOPS×bs=bw 关系成立，per-IO 固定开销限制小块 bw（64K→1M 涨 2.2×）。stage3 可探索 slave 侧 read_ahead_kb（256/1024/8192）、chunksize 对小块读的影响。仍限 BeeGFS 应用层 / slave 端，不动网卡。
 
 ### 阶段4（可选）：暖态基线与业务对比
 
@@ -166,5 +217,6 @@
 
 ### 不再作为可调优项（有数据支撑，写入汇报）
 
-- **单流读/写**：延迟主导（§2.2），换网卡/调应用层参数均无法提升占比，物理天花板。以 per-IO 延迟分解作为"为什么达不到 50%"的说明。
+- **单流读/写（口径 A）**：延迟主导（clat 165–260µs，§2.2），stage2 补测坐实 NIC 利用率仅 6.7–11.7%（IB counters 实测，链路远未打满），换网卡/调应用层参数均无法提升占比，物理天花板。
+- **口径 B 单流 seqwrite（53.3）**：单流+镜像双写+千兆 RTT 串行，NIC 利用率 45%（sar 实测），千兆单流写固有特性（历史 58.8 亦低于 59）。
 - **157 共部署拆分**：0.6 已证当前负载下 157 共部署非瓶颈（BeeGFS 服务测试期间近 0% CPU）。默认不做。
