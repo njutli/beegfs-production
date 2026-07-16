@@ -1,0 +1,56 @@
+### date: Wed Jul 15 19:11:59 +07 2026
+### hostname: oneasia-c1-cpu-node10
+### fio: fio-3.28
+### beegfs-net:
+
+mgmt_nodes
+=============
+oneasia-c1-cpu-node10 [ID: 1]
+   Connections: TCP: 1 (10.114.1.157:8008); 
+
+meta_nodes
+=============
+oneasia-c1-cpu-node10 [ID: 1]
+   Connections: TCP: 1 (10.114.1.157:8005); 
+ceph-node1 [ID: 2]
+   Connections: <none>
+ceph-node2 [ID: 3]
+   Connections: <none>
+ceph-node3 [ID: 4]
+   Connections: <none>
+
+storage_nodes
+=============
+ceph-node1 [ID: 101]
+   Connections: TCP: 2 (10.114.1.150:8003); 
+ceph-node2 [ID: 102]
+   Connections: TCP: 2 (10.114.1.151:8003); 
+ceph-node3 [ID: 103]
+   Connections: TCP: 2 (10.114.1.152:8003); 
+
+
+### connUseRDMA:
+connUseRDMA                  = false
+# [connUseRDMA]
+connUseRDMA = false
+### connInterfacesFile:
+eno12409
+### targets:
+TargetID     Reachability  Consistency   NodeID
+========     ============  ===========   ======
+    1011           Online         Good      101
+    1012           Online         Good      101
+    1021           Online         Good      102
+    1022           Online         Good      102
+    1031           Online         Good      103
+    1032           Online         Good      103
+### root stripe:
+Entry type: directory
+EntryID: root
+Metadata buddy group: 2
+Current primary metadata node: oneasia-c1-cpu-node10 [ID: 1]
+Stripe pattern details:
++ Type: Buddy Mirror
++ Chunksize: 1M
++ Number of storage targets: desired: 3
++ Storage Pool: 1 (Default)

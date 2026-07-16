@@ -72,6 +72,7 @@ done
 run_on "${CLIENT_SERVER}" "sudo systemctl disable beegfs-client beegfs-helperd beegfs-meta beegfs-mgmtd 2>/dev/null || true"
 run_on "${CLIENT_SERVER}" "sudo systemctl reset-failed beegfs-client beegfs-helperd beegfs-meta beegfs-mgmtd 2>/dev/null || true"
 run_on "${CLIENT_SERVER}" "sudo umount ${BEEGFS_MOUNT_POINT} 2>/dev/null || true"
+run_on "${CLIENT_SERVER}" "sudo rmmod beegfs 2>/dev/null && echo '  [157] beegfs kernel module unloaded' || echo '  [157] beegfs module not loaded or in use'"
 run_on "${CLIENT_SERVER}" "sudo rm -rf ${BEEGFS_META_DIR}"              # /mnt/beegfs-meta/beegfs_meta (nvme1n1, BeeGFS 专用)
 run_on "${CLIENT_SERVER}" "sudo rm -rf ${BEEGFS_MGMTD_DB}/*"            # /var/lib/beegfs/mgmtd/* (拓扑数据, 重部署重建)
 run_on "${CLIENT_SERVER}" "sudo rm -rf ${BEEGFS_MOUNT_POINT}"          # 空挂载点目录
@@ -116,8 +117,9 @@ if [ "${PURGE}" -eq 1 ]; then
     echo ">>> --purge: 卸载所有 BeeGFS 包 + 删除 /etc/beegfs"
     for ip in "${ALL_SERVERS[@]}"; do
         run_on "${ip}" "sudo DEBIAN_FRONTEND=noninteractive apt-get purge -y 'beegfs-*' 'libbeegfs-*' 2>/dev/null || true"
-        run_on "${ip}" "sudo rm -rf /etc/beegfs"
+        run_on "${ip}" "sudo rm -rf /etc/beegfs /opt/beegfs /var/lib/beegfs"
         run_on "${ip}" "sudo rm -f ${BEEGFS_REPO_LIST}"
+        run_on "${ip}" "sudo systemctl reset-failed 'beegfs-*' 2>/dev/null || true"
     done
 fi
 
